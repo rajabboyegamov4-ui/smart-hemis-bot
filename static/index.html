@@ -4,10 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Talaba Smart Portali | HEMIS & AI</title>
-  
-  <!-- Telegram Web App kutubxonasi qo'shildi -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -16,7 +13,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
 
-  <!-- Navbar -->
   <header class="bg-white/90 border-b border-slate-200 sticky top-0 z-30 glass">
     <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
       <div class="flex items-center gap-3">
@@ -34,13 +30,9 @@
     </div>
   </header>
 
-  <!-- Main Container -->
   <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-    <!-- Chap ustun: HEMIS Dashboard (7 ustun) -->
     <section class="lg:col-span-7 space-y-6">
       
-      <!-- Talaba ma'lumotlari -->
       <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
         <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
           <i class="fa-solid fa-id-card text-blue-600"></i> Talaba Profili
@@ -61,7 +53,6 @@
         </div>
       </div>
 
-      <!-- Dars Jadvali -->
       <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
         <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
           <i class="fa-solid fa-calendar-days text-indigo-600"></i> Dars Jadvali
@@ -71,73 +62,21 @@
         </div>
       </div>
 
-      <!-- Baholar va Davomat -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <!-- Baholar -->
-        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-          <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
-            <i class="fa-solid fa-chart-simple text-emerald-600"></i> Baholar
-          </h2>
-          <div id="grades-list" class="space-y-2 max-h-56 overflow-y-auto pr-1 text-sm">
-            <p class="text-slate-400">Yuklanmoqda...</p>
-          </div>
-        </div>
-
-        <!-- Davomat -->
-        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between">
-          <div>
-            <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
-              <i class="fa-solid fa-clock text-rose-500"></i> Davomat
-            </h2>
-            <p class="text-xs text-slate-500 mb-4">Semestr davomidagi umumiy dars qoldirish holati:</p>
-            <div class="text-center py-4 bg-rose-50 rounded-xl border border-rose-100">
-              <span id="att-hours" class="text-4xl font-extrabold text-rose-600">0</span>
-              <span class="text-xs text-rose-700 block font-medium mt-1">soat qoldirilgan</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
     </section>
 
-    <!-- O'ng ustun: Gemini AI Chat & PDF Analizator (5 ustun) -->
     <section class="lg:col-span-5 space-y-6">
-
-      <!-- PDF yuklash kartasi -->
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-        <h2 class="text-base font-bold text-slate-800 mb-2 flex items-center gap-2">
-          <i class="fa-solid fa-file-pdf text-red-500"></i> PDF Konspekt Tahlili
-        </h2>
-        <p class="text-xs text-slate-500 mb-3">Konspekt, maqola yoki kitob tashlang, AI xulosasini beradi.</p>
-        
-        <form id="pdf-form" class="space-y-3">
-          <input type="file" id="pdf-file" accept=".pdf" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" required>
-          <input type="text" id="pdf-query" placeholder="Savol (ixtiyoriy, masalan: 3-mavzu xulosasi)" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg outline-none focus:border-blue-500">
-          <button type="submit" id="pdf-submit-btn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 rounded-lg text-xs transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-brain"></i> Hujjatni tahlil qilish
-          </button>
-        </form>
-        <div id="pdf-result" class="mt-3 text-xs bg-slate-50 p-3 rounded-lg border border-slate-200 text-slate-700 whitespace-pre-wrap hidden max-h-48 overflow-y-auto"></div>
-      </div>
-
-      <!-- AI Chat Oynasi -->
       <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[500px]">
         <div class="p-4 border-b border-slate-100 flex items-center justify-between">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span class="font-bold text-sm text-slate-800">Gemini 3.6 Suhbat</span>
           </div>
-          <span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold">Real-time</span>
         </div>
-
-        <!-- Chat xabarlari -->
         <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-3 text-sm">
           <div class="bg-slate-100 p-3 rounded-2xl rounded-tl-sm text-slate-700 max-w-[85%] text-xs">
-            Assalomu alaykum! Fanga oid savolingizni yozing yoki konspekt tushuntirishini so'rang.
+            Assalomu alaykum! Fanga oid savolingizni yozing.
           </div>
         </div>
-
-        <!-- Chat form -->
         <form id="chat-form" class="p-3 border-t border-slate-100 flex gap-2">
           <input type="text" id="chat-input" placeholder="Savolingizni yozing..." class="flex-1 text-xs px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500" required autocomplete="off">
           <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition">
@@ -145,27 +84,24 @@
           </button>
         </form>
       </div>
-
     </section>
   </main>
 
-  <!-- Frontend JavaScript -->
   <script>
-    // 1. Dashboard yuklash (Yangilangan va to'g'rilangan)
     async function loadDashboard() {
       try {
-        // Telegramdan foydalanuvchi ID sini olish
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Oynani to'liq ekranga ochish
-        const userId = tg.initDataUnsafe?.user?.id;
+        tg.expand();
+        
+        // Havoladan (?user_id=...) yoki Telegramdan ID ni olamiz
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = tg.initDataUnsafe?.user?.id || urlParams.get('user_id');
 
         if (!userId) {
-          console.error("Telegram ID topilmadi");
           document.getElementById('user-badge').innerText = "Tizimga kiring";
           return;
         }
 
-        // Profil ma'lumotlarini olish (user_id orqali)
         const profRes = await fetch(`/api/profile?user_id=${userId}`);
         const p = await profRes.json();
 
@@ -175,9 +111,10 @@
           document.getElementById('prof-name').innerText = name;
           document.getElementById('prof-faculty').innerText = p.faculty?.name || '—';
           document.getElementById('prof-group').innerText = p.group?.name || '—';
+        } else {
+          document.getElementById('user-badge').innerText = "Ro'yxatdan o'ting";
         }
 
-        // Dars jadvalini olish (user_id orqali)
         const schRes = await fetch(`/api/schedule?user_id=${userId}`);
         const schedule = await schRes.json();
 
@@ -202,107 +139,11 @@
             `;
           });
         }
-
-        // Hozirgi backendda baholar va davomat API si yo'qligi uchun:
-        document.getElementById('grades-list').innerHTML = '<p class="text-xs text-slate-400">Hozircha tizimda yo\'q</p>';
-        document.getElementById('att-hours').innerText = '0';
-
       } catch (err) {
-        console.error("Dashboard yuklashda xato:", err);
+        console.error("Xatolik:", err);
       }
     }
 
-    // 2. Gemini Streaming Chat
-    const chatForm = document.getElementById('chat-form');
-    const chatInput = document.getElementById('chat-input');
-    const chatBox = document.getElementById('chat-box');
-
-    chatForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const text = chatInput.value.trim();
-      if (!text) return;
-
-      // Foydalanuvchi xabari
-      chatBox.innerHTML += `
-        <div class="flex justify-end">
-          <div class="bg-blue-600 text-white p-3 rounded-2xl rounded-tr-sm max-w-[85%] text-xs shadow-sm">
-            ${text}
-          </div>
-        </div>
-      `;
-      chatInput.value = '';
-      chatBox.scrollTop = chatBox.scrollHeight;
-
-      // AI javob konteyneri
-      const aiMsgWrapper = document.createElement('div');
-      aiMsgWrapper.className = 'flex justify-start';
-      const aiMsgBubble = document.createElement('div');
-      aiMsgBubble.className = 'bg-slate-100 text-slate-800 p-3 rounded-2xl rounded-tl-sm max-w-[85%] text-xs shadow-sm whitespace-pre-wrap';
-      aiMsgBubble.innerText = '...';
-      aiMsgWrapper.appendChild(aiMsgBubble);
-      chatBox.appendChild(aiMsgWrapper);
-      chatBox.scrollTop = chatBox.scrollHeight;
-
-      // SSE orqali streaming qabul qilish
-      const eventSource = new EventSource(`/api/chat-stream?prompt=${encodeURIComponent(text)}`);
-      let aiText = '';
-
-      eventSource.onmessage = (event) => {
-        const payload = JSON.parse(event.data);
-        if (payload.text) {
-          aiText += payload.text;
-          aiMsgBubble.innerText = aiText;
-          chatBox.scrollTop = chatBox.scrollHeight;
-        } else if (payload.error) {
-          aiMsgBubble.innerText = "⚠️ Xatolik: " + payload.error;
-          eventSource.close();
-        }
-      };
-
-      eventSource.onerror = () => {
-        eventSource.close();
-      };
-    });
-
-    // 3. PDF Tahlili
-    const pdfForm = document.getElementById('pdf-form');
-    const pdfResult = document.getElementById('pdf-result');
-    const pdfBtn = document.getElementById('pdf-submit-btn');
-
-    pdfForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const fileInput = document.getElementById('pdf-file');
-      const queryInput = document.getElementById('pdf-query');
-
-      if (!fileInput.files[0]) return;
-
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-      if (queryInput.value) {
-        formData.append('query', queryInput.value);
-      }
-
-      pdfBtn.disabled = true;
-      pdfBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Tahlil qilinmoqda...';
-      pdfResult.classList.remove('hidden');
-      pdfResult.innerText = "Kutib turing, Gemini konspektni o'qib chiqmoqda...";
-
-      try {
-        const res = await fetch('/api/analyze-pdf', {
-          method: 'POST',
-          body: formData
-        });
-        const data = await res.json();
-        pdfResult.innerText = data.analysis || "Natija yo'q.";
-      } catch (err) {
-        pdfResult.innerText = "Xatolik: " + err.message;
-      } finally {
-        pdfBtn.disabled = false;
-        pdfBtn.innerHTML = '<i class="fa-solid fa-brain"></i> Hujjatni tahlil qilish';
-      }
-    });
-
-    // Sahifa yuklanganda ishga tushirish
     loadDashboard();
   </script>
 </body>
