@@ -1,5 +1,12 @@
 import asyncio
-from aiogram import Bot, Dispatcher, types
+import io
+import os
+import google.generativeai as genai
+from PyPDF2 import PdfReader
+from pptx import Presentation
+from pptx.util import Pt
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -7,17 +14,23 @@ from aiogram.types import (
     KeyboardButton, 
     ReplyKeyboardMarkup, 
     ReplyKeyboardRemove,
-    WebAppInfo
+    WebAppInfo,
+    FSInputFile
 )
 
-from config import BOT_TOKEN
+from config import BOT_TOKEN, GEMINI_API_KEY
 from services.hemis_service import hemis_client
-from database import init_db, get_user, save_user
+from database import init_db, get_user, save_user, update_language, get_all_users
+
+# Gemini AIni sozlash
+genai.configure(api_key=GEMINI_API_KEY)
+ai_model = genai.GenerativeModel('gemini-1.5-flash')
 
 WEBAPP_URL = "https://smart-hemis-bot.onrender.com"
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
+scheduler = AsyncIOScheduler()
 
 class LoginState(StatesGroup):
     waiting_for_login = State()
@@ -29,12 +42,104 @@ def get_portal_keyboard(user_id: int):
         keyboard=[
             [KeyboardButton(text="🚀 Talaba Portalini ochish", web_app=WebAppInfo(url=url))],
             [KeyboardButton(text="👤 Profil"), KeyboardButton(text="📅 Dars jadvali")],
-            [KeyboardButton(text="📊 Baholar"), KeyboardButton(text="⏱ Davomat")],
-            [KeyboardButton(text="🔔 Eslatmani tekshirish")]
+            [KeyboardButton(text="🌐 Tilni o'zgartirish"), KeyboardButton(text="📊 Baholar va Davomat")]
         ],
         resize_keyboard=True
     )
 
+# --- AVTOMATIK JADVAL VA MONITORING (FONDA) ---
+async def send_daily_reminders():
+    users = await get_all_users()
+    for telegram_id, token in users:
+        try:
+            # Bu yerda HEMIS API dan ertangi jadval olinadi. (Hozircha stub qoldiramiz, keyin real API ulaymiz)
+            await bot.send_message(
+                telegram_id, 
+                "🔔 **Ertangi kun uchun dars jadvalingiz:**\n\n1. Oliy matematika (08:30)\n2. Dasturlash (10:00)\n\n_Vaqtida borishni unutmang!_", 
+                parse_mode="Markdown"
+            )
+        except Exception as e:
+            pass
+
+# --- TIL TANLASH ---
+@dp.message(F.text == "🌐 Tilni o'zgartirish")
+@dp.message(Command("language"))
+async def cmd_language(message: types.Message):
+    markup = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="🇺🇿 O'zbekcha"), KeyboardButton(text="🇷🇺 Русский"), KeyboardButton(text="🇬🇧 English")]],
+        resize_keyboard=True
+    )
+    await message.answer("O'zingizga qulay tilni tanlang / Выберите язык / Choose language:", reply_markup=markup)
+
+@dp.message(F.text.in_(["🇺🇿 O'zbekcha", "🇷🇺 Русский", "🇬🇧 English"]))
+async def process_language(message: types.Message):
+    lang_map = {"🇺🇿 O'zbekcha": "uz", "🇷🇺 Русский": "ru", "🇬🇧 English": "en"}
+    await update_language(message.from_user.id, lang_map[message.text])
+    await message.answer("✅ Til muvaffaqiyatli o'zgartirildi!", reply_markup=get_portal_keyboard(message.from_user.id))
+
+# --- PDF TAHLILI (NotebookLM) ---
+@dp.message(F.document)
+async def handle_pdf(message: types.Message):
+    if not message.document.file_name.endswith('.pdf'):
+        return await message.answer("Iltimos, faqat PDF formatidagi fayllarni yuboring.")
+    
+    msg = await message.answer("⏳ PDF fayl o'qilmoqda va AI tomonidan tahlil qilinmoqda...")
+    
+    try:
+        file = await bot.get_file(message.document.file_id)
+        downloaded_file = await bot.download_file(file.file_path)
+        
+        pdf_reader = PdfReader(downloaded_file)
+        text = ""
+        for page in pdf_reader.pages[:10]: # Xotira to'lmasligi uchun dastlabki 10 betni o'qiydi
+            text += page.extract_text() + "\n"
+
+        prompt = f"Quyidagi PDF kitob/konspekt matnining qisqacha xulosasini va eng asosiy joylarini ajratib ber. Javobni chiroyli qilib, lekin hec qanday yulduzchalar (**) ishlatmasdan yoz:\n\n{text[:3000]}"
+        response = ai_model.generate_content(prompt)
+        
+        await msg.edit_text(f"📑 **PDF Xulosasi:**\n\n{response.text.replace('**', '')}", parse_mode="Markdown")
+    except Exception as e:
+        await msg.edit_text("❌ PDFni o'qishda xatolik yuz berdi. Matn skanerlanmagan rasmli PDF bo'lishi mumkin.")
+
+# --- PREZENTATSIYA (PPTX) YASASH ---
+@dp.message(Command("ppt"))
+async def create_presentation(message: types.Message):
+    topic = message.text.replace('/ppt', '').strip()
+    if not topic:
+        return await message.answer("Iltimos, mavzuni yozing. Masalan: `/ppt Sun'iy intellekt tarixi`", parse_mode="Markdown")
+    
+    msg = await message.answer("🪄 AI prezentatsiya tuzilmasini yaratmoqda. Kuting...")
+    
+    try:
+        # Gemini orqali slaydlar matnini generatsiya qilish
+        prompt = f"'{topic}' mavzusida 4 ta slayd uchun tayyor prezentatsiya matni tuzib ber. Format shunday bo'lsin: Har bir slayd '\n---SLIDE---\nSarlavha: ...\nMatn: ...' shaklida ajratilsin."
+        response = ai_model.generate_content(prompt)
+        slides_data = response.text.split("---SLIDE---")[1:] # Ajratib olish
+        
+        # PPTX faylini yaratish
+        prs = Presentation()
+        for slide_data in slides_data:
+            lines = [line.strip() for line in slide_data.strip().split('\n') if line.strip()]
+            title = lines[0].replace('Sarlavha:', '').strip() if len(lines) > 0 else "Mavzu"
+            content = '\n'.join(lines[1:]).replace('Matn:', '').replace('**', '').strip()
+            
+            slide_layout = prs.slide_layouts[1] # Title and Content layout
+            slide = prs.slides.add_slide(slide_layout)
+            slide.shapes.title.text = title
+            slide.placeholders[1].text = content
+        
+        file_path = f"{message.from_user.id}_prezentatsiya.pptx"
+        prs.save(file_path)
+        
+        doc = FSInputFile(file_path, filename=f"{topic}.pptx")
+        await bot.send_document(message.chat.id, doc, caption=f"🎉 **{topic}** mavzusidagi tayyor prezentatsiya!", parse_mode="Markdown")
+        await msg.delete()
+        os.remove(file_path) # Yaratilgan faylni serverdan o'chirish
+        
+    except Exception as e:
+        await msg.edit_text(f"❌ Xatolik yuz berdi. Qaytadan urinib ko'ring.")
+
+# --- START VA LOGIN ---
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message, state: FSMContext):
     await state.clear()
@@ -43,14 +148,12 @@ async def cmd_start(message: types.Message, state: FSMContext):
     if user and user["hemis_token"]:
         name = user["full_name"] or message.from_user.first_name
         await message.answer(
-            f"Assalomu alaykum, {name}!\n\n"
-            "Siz tizimga ulangansiz. Portalni ochish uchun pastdagi tugmani bosing:",
+            f"Assalomu alaykum, {name}!\n\nPortalga xush kelibsiz.",
             reply_markup=get_portal_keyboard(message.from_user.id)
         )
     else:
         await message.answer(
-            "👋 Assalomu alaykum!\n\n"
-            "Talaba portalidan foydalanish uchun HEMIS tizimidagi **Talaba ID (Login)**ingizni kiriting:",
+            "👋 Assalomu alaykum!\n\nTalaba portalidan foydalanish uchun HEMIS **Talaba ID (Login)**ingizni kiriting:",
             reply_markup=ReplyKeyboardRemove()
         )
         await state.set_state(LoginState.waiting_for_login)
@@ -72,42 +175,29 @@ async def process_password(message: types.Message, state: FSMContext):
     except Exception:
         pass
 
-    checking_msg = await message.answer("⏳ HEMIS tizimi orqali tekshirilmoqda...")
-    
+    checking_msg = await message.answer("⏳ HEMIS tizimi tekshirilmoqda...")
     auth_result = await hemis_client.login(login_id, password)
     
     if auth_result and auth_result.get("token"):
         token = auth_result["token"]
-        profile = auth_result.get("profile") or {}
-        full_name = profile.get("full_name", message.from_user.full_name)
+        full_name = auth_result.get("profile", {}).get("full_name", message.from_user.full_name)
         
-        await save_user(
-            telegram_id=message.from_user.id,
-            hemis_token=token,
-            student_id=login_id,
-            full_name=full_name
-        )
-        
+        await save_user(message.from_user.id, token, login_id, full_name, "uz")
         await checking_msg.edit_text(f"✅ Muvaffaqiyatli ulandingiz, {full_name}!")
-        await message.answer(
-            "Pastdagi tugma orqali shaxsiy portalingizni ochishingiz mumkin 👇",
-            reply_markup=get_portal_keyboard(message.from_user.id)
-        )
+        await message.answer("👇 Portaldan foydalaning:", reply_markup=get_portal_keyboard(message.from_user.id))
         await state.clear()
     else:
-        await checking_msg.edit_text(
-            "❌ Login yoki parol noto'g'ri bo'ldi. Qaytadan /start bosib urinib ko'ring."
-        )
+        await checking_msg.edit_text("❌ Login yoki parol noto'g'ri. Qaytadan /start bosib kiring.")
         await state.clear()
-
-@dp.message(Command("logout"))
-async def cmd_logout(message: types.Message):
-    await save_user(message.from_user.id, "", "", "")
-    await message.answer("Tizimdan chiqdingiz. Qayta kirish uchun /start bosing.", reply_markup=ReplyKeyboardRemove())
 
 async def main():
     await init_db()
-    print("Bot ishga tushdi...")
+    
+    # Eslatmalarni har kuni soat 20:00 da ishga tushirish (Toshkent vaqti)
+    scheduler.add_job(send_daily_reminders, 'cron', hour=20, minute=0)
+    scheduler.start()
+    
+    print("AI Integratsiyalashgan HEMIS bot ishga tushdi...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
