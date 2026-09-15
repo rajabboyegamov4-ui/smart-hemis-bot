@@ -24,7 +24,7 @@ from database import init_db, get_user, save_user, update_language, get_all_user
 
 # Gemini AIni sozlash
 genai.configure(api_key=GEMINI_API_KEY)
-ai_model = genai.GenerativeModel("gemini-pro")
+genai.GenerativeModel("gemini-1.5-flash-latest")
 
 WEBAPP_URL = "https://smart-hemis-bot.onrender.com"
 
