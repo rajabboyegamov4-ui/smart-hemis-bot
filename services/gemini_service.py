@@ -10,9 +10,7 @@ if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
 # Modelni tanlash (faqat model nomi qoladi, xato beradigan qismi olib tashlandi)
-model = genai.GenerativeModel(
-    model = genai.GenerativeModel("gemini-pro")
-)
+model = genai.GenerativeModel("gemini-pro")
 
 async def ask_gemini(prompt: str, context: str = "") -> str:
     """Gemini AI ga asinxron so'rov yuborish va javob olish."""
