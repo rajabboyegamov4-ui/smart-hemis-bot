@@ -1,5 +1,5 @@
 import asyncio
-from aiogram import Bot, Dispatcher, types, F
+from aiogram import Bot, Dispatcher, types
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -19,13 +19,11 @@ WEBAPP_URL = "https://smart-hemis-bot.onrender.com"
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# Ro'yxatdan o'tish bosqichlari
 class LoginState(StatesGroup):
     waiting_for_login = State()
     waiting_for_password = State()
 
 def get_portal_keyboard(user_id: int):
-    # WebApp URL ga telegram_id qo'shib yuboriladi
     url = f"{WEBAPP_URL}?user_id={user_id}"
     return ReplyKeyboardMarkup(
         keyboard=[
@@ -35,7 +33,7 @@ def get_portal_keyboard(user_id: int):
             [KeyboardButton(text="🔔 Eslatmani tekshirish")]
         ],
         resize_keyboard=True
-       
+    )
 
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message, state: FSMContext):
@@ -69,7 +67,6 @@ async def process_password(message: types.Message, state: FSMContext):
     data = await state.get_data()
     login_id = data["hemis_login"]
     
-    # Parol yozilgan xabarni xavfsizlik uchun darhol o'chirib tashlaymiz
     try:
         await message.delete()
     except Exception:
@@ -84,7 +81,6 @@ async def process_password(message: types.Message, state: FSMContext):
         profile = auth_result.get("profile") or {}
         full_name = profile.get("full_name", message.from_user.full_name)
         
-        # Bazaga saqlash
         await save_user(
             telegram_id=message.from_user.id,
             hemis_token=token,
@@ -111,7 +107,7 @@ async def cmd_logout(message: types.Message):
 
 async def main():
     await init_db()
-    print("Bot ko'p foydalanuvchili rejimda ishga tushdi...")
+    print("Bot ishga tushdi...")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
