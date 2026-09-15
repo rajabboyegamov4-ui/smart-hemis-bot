@@ -101,43 +101,82 @@ async def handle_pdf(message: types.Message):
     except Exception as e:
         await msg.edit_text("❌ PDFni o'qishda xatolik yuz berdi. Matn skanerlanmagan rasmli PDF bo'lishi mumkin.")
 
+
 # --- PREZENTATSIYA (PPTX) YASASH ---
 @dp.message(Command("ppt"))
 async def create_presentation(message: types.Message):
     topic = message.text.replace('/ppt', '').strip()
     if not topic:
-        return await message.answer("Iltimos, mavzuni yozing. Masalan: `/ppt Sun'iy intellekt tarixi`", parse_mode="Markdown")
+        return await message.answer("Iltimos, mavzuni yozing. Masalan: `/ppt Sun'iy intellekt tarixi`")
     
     msg = await message.answer("🪄 AI prezentatsiya tuzilmasini yaratmoqda. Kuting...")
     
     try:
-        # Gemini orqali slaydlar matnini generatsiya qilish
-        prompt = f"'{topic}' mavzusida 4 ta slayd uchun tayyor prezentatsiya matni tuzib ber. Format shunday bo'lsin: Har bir slayd '\n---SLIDE---\nSarlavha: ...\nMatn: ...' shaklida ajratilsin."
-        response = ai_model.generate_content(prompt)
-        slides_data = response.text.split("---SLIDE---")[1:] # Ajratib olish
+        # Promptni aniqroq qildik, to'g'ridan-to'g'ri slayd matnini so'raymiz
+        prompt = (
+            f"'{topic}' mavzusida 4 ta slayd uchun tayyor prezentatsiya matni tuzib ber. "
+            "Faqat slaydlar matnini yoz, ortiqcha kirish gaplarsiz. "
+            "Har bir slaydni aniq '---SLIDE---' degan so'z bilan boshlang.\n"
+            "Ichida 'Sarlavha:' va 'Matn:' so'zlari bo'lsin."
+        )
         
-        # PPTX faylini yaratish
+        # AI dan javob olish
+        response = await ai_model.generate_content_async(prompt)
+        
+        # AI qo'shib yuborishi mumkin bo'lgan keraksiz belgilarni tozalaymiz
+        text = response.text.replace('```text', '').replace('```', '')
+        slides_data = text.split("---SLIDE---")
+        
         prs = Presentation()
+        slide_added = False
+        
         for slide_data in slides_data:
+            if not slide_data.strip():
+                continue
+                
             lines = [line.strip() for line in slide_data.strip().split('\n') if line.strip()]
-            title = lines[0].replace('Sarlavha:', '').strip() if len(lines) > 0 else "Mavzu"
-            content = '\n'.join(lines[1:]).replace('Matn:', '').replace('**', '').strip()
+            if not lines:
+                continue
+                
+            title = "Mavzu"
+            content_lines = []
             
-            slide_layout = prs.slide_layouts[1] # Title and Content layout
+            for line in lines:
+                if line.startswith("Sarlavha:"):
+                    title = line.replace("Sarlavha:", "").replace('**', '').strip()
+                elif line.startswith("Matn:"):
+                    content_lines.append(line.replace("Matn:", "").replace('**', '').strip())
+                else:
+                    content_lines.append(line.replace('**', '').strip())
+            
+            content = '\n'.join(content_lines)
+            
+            slide_layout = prs.slide_layouts[1] 
             slide = prs.slides.add_slide(slide_layout)
             slide.shapes.title.text = title
             slide.placeholders[1].text = content
+            slide_added = True
+            
+        if not slide_added:
+            raise ValueError("AI slayd matnini to'g'ri formatda bermadi.")
         
-        file_path = f"{message.from_user.id}_prezentatsiya.pptx"
+        # Faylni Render serverida xavfsiz papkaga saqlash
+        file_path = f"/tmp/{message.from_user.id}_prezentatsiya.pptx"
+        if os.name == 'nt': # Agar o'zingizning kompyuteringizda ishlatsangiz
+            file_path = f"{message.from_user.id}_prezentatsiya.pptx"
+            
         prs.save(file_path)
         
         doc = FSInputFile(file_path, filename=f"{topic}.pptx")
-        await bot.send_document(message.chat.id, doc, caption=f"🎉 **{topic}** mavzusidagi tayyor prezentatsiya!", parse_mode="Markdown")
+        await bot.send_document(message.chat.id, doc, caption=f"🎉 <b>{topic}</b> mavzusidagi tayyor prezentatsiya!", parse_mode="HTML")
         await msg.delete()
-        os.remove(file_path) # Yaratilgan faylni serverdan o'chirish
         
+        # Yuborib bo'lingach, serverdan tozalab tashlash
+        if os.path.exists(file_path):
+            os.remove(file_path) 
+            
     except Exception as e:
-        await msg.edit_text(f"❌ Xatolik yuz berdi. Qaytadan urinib ko'ring.")
+        await msg.edit_text(f"❌ Xatolik yuz berdi. Sabab: {str(e)}")
 
 # --- START VA LOGIN ---
 @dp.message(CommandStart())
