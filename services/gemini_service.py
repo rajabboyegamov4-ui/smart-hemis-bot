@@ -11,7 +11,7 @@ if GEMINI_API_KEY:
 
 # Modelni tanlash (faqat model nomi qoladi, xato beradigan qismi olib tashlandi)
 model = genai.GenerativeModel(
-    ai_model = genai.GenerativeModel("gemini-pro")
+    model = genai.GenerativeModel("gemini-pro")
 )
 
 async def ask_gemini(prompt: str, context: str = "") -> str:
