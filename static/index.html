@@ -1,150 +1,104 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Talaba Smart Portali | HEMIS & AI</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    .glass { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEMIS Student Portal</title>
+    <!-- Tailwind CSS (Zamonaviy dizayn uchun) -->
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <!-- FontAwesome (Ikonkalar uchun) -->
+    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
+    <script src="[https://telegram.org/js/telegram-web-app.js](https://telegram.org/js/telegram-web-app.js)"></script>
+    <style>
+        /* HEMISning rasmiy to'q ko'k rangi */
+        .bg-hemis-dark { background-color: #0f172a; }
+        .text-hemis-dark { color: #0f172a; }
+        body { -webkit-tap-highlight-color: transparent; }
+    </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
+<body class="bg-gray-100 font-sans pb-10">
 
-  <header class="bg-white/90 border-b border-slate-200 sticky top-0 z-30 glass">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200">
-          <i class="fa-solid fa-graduation-cap"></i>
+    <!-- Header qismi -->
+    <header class="bg-hemis-dark text-white shadow-lg sticky top-0 z-50">
+        <div class="flex justify-between items-center p-4">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-graduation-cap text-2xl text-blue-400"></i>
+                <h1 class="text-xl font-bold tracking-wide">HEMIS</h1>
+            </div>
+            <button class="text-white text-xl">
+                <i class="fa-solid fa-bars"></i>
+            </button>
         </div>
-        <div>
-          <h1 class="font-bold text-lg leading-tight text-slate-900">Talaba Portali</h1>
-          <p class="text-xs text-slate-500">HEMIS & Gemini AI Integratsiyasi</p>
-        </div>
-      </div>
-      <div id="user-badge" class="text-sm font-semibold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-        Yuklanmoqda...
-      </div>
-    </div>
-  </header>
-
-  <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-    <section class="lg:col-span-7 space-y-6">
-      
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-        <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-id-card text-blue-600"></i> Talaba Profili
-        </h2>
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm" id="profile-details">
-          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <span class="text-xs text-slate-400 block">F.I.SH</span>
-            <span class="font-semibold text-slate-800" id="prof-name">—</span>
-          </div>
-          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <span class="text-xs text-slate-400 block">Fakultet</span>
-            <span class="font-semibold text-slate-800" id="prof-faculty">—</span>
-          </div>
-          <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
-            <span class="text-xs text-slate-400 block">Guruh</span>
-            <span class="font-semibold text-slate-800" id="prof-group">—</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-        <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-calendar-days text-indigo-600"></i> Dars Jadvali
-        </h2>
-        <div id="schedule-list" class="space-y-2.5">
-          <p class="text-sm text-slate-400">Jadval yuklanmoqda...</p>
-        </div>
-      </div>
-
-    </section>
-
-    <section class="lg:col-span-5 space-y-6">
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[500px]">
-        <div class="p-4 border-b border-slate-100 flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span class="font-bold text-sm text-slate-800">Gemini 3.6 Suhbat</span>
-          </div>
-        </div>
-        <div id="chat-box" class="flex-1 p-4 overflow-y-auto space-y-3 text-sm">
-          <div class="bg-slate-100 p-3 rounded-2xl rounded-tl-sm text-slate-700 max-w-[85%] text-xs">
-            Assalomu alaykum! Fanga oid savolingizni yozing.
-          </div>
-        </div>
-        <form id="chat-form" class="p-3 border-t border-slate-100 flex gap-2">
-          <input type="text" id="chat-input" placeholder="Savolingizni yozing..." class="flex-1 text-xs px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-500" required autocomplete="off">
-          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition">
-            <i class="fa-solid fa-paper-plane"></i>
-          </button>
-        </form>
-      </div>
-    </section>
-  </main>
-
-  <script>
-    async function loadDashboard() {
-      try {
-        const tg = window.Telegram.WebApp;
-        tg.expand();
         
-        // Havoladan (?user_id=...) yoki Telegramdan ID ni olamiz
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = tg.initDataUnsafe?.user?.id || urlParams.get('user_id');
-
-        if (!userId) {
-          document.getElementById('user-badge').innerText = "Tizimga kiring";
-          return;
-        }
-
-        const profRes = await fetch(`/api/profile?user_id=${userId}`);
-        const p = await profRes.json();
-
-        if (p && !p.error) {
-          const name = p.full_name || p.name || 'Talaba';
-          document.getElementById('user-badge').innerText = name;
-          document.getElementById('prof-name').innerText = name;
-          document.getElementById('prof-faculty').innerText = p.faculty?.name || '—';
-          document.getElementById('prof-group').innerText = p.group?.name || '—';
-        } else {
-          document.getElementById('user-badge').innerText = "Ro'yxatdan o'ting";
-        }
-
-        const schRes = await fetch(`/api/schedule?user_id=${userId}`);
-        const schedule = await schRes.json();
-
-        const schContainer = document.getElementById('schedule-list');
-        schContainer.innerHTML = '';
-        
-        if (!schedule || schedule.error || schedule.length === 0) {
-          schContainer.innerHTML = '<p class="text-xs text-slate-400">Bugun faol darslar yo\'q.</p>';
-        } else {
-          schedule.forEach(item => {
-            schContainer.innerHTML += `
-              <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+        <!-- Talaba profili qisqacha -->
+        <div class="px-4 pb-4">
+            <div class="flex items-center gap-4 bg-white/10 p-3 rounded-xl border border-white/20">
+                <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-xl font-bold">
+                    <i class="fa-solid fa-user"></i>
+                </div>
                 <div>
-                  <h4 class="font-semibold text-xs text-slate-800">${item.subject?.name || 'Fan'}</h4>
-                  <p class="text-[11px] text-slate-400">${item.employee?.name || ''}</p>
+                    <h2 class="font-semibold text-sm">Egamov Rajabboy</h2>
+                    <p class="text-xs text-blue-200">Talaba ID: 306241100302</p>
                 </div>
-                <div class="text-right">
-                  <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">${item.lessonPair?.name || '—'}</span>
-                  <span class="text-[11px] text-slate-500 block mt-0.5">${item.auditorium?.name || ''}</span>
-                </div>
-              </div>
-            `;
-          });
-        }
-      } catch (err) {
-        console.error("Xatolik:", err);
-      }
-    }
+            </div>
+        </div>
+    </header>
 
-    loadDashboard();
-  </script>
+    <!-- Asosiy menyu kartochkalari -->
+    <main class="p-4 grid grid-cols-2 gap-4 mt-2">
+        
+        <!-- Dars Jadvali -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform">
+            <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-calendar-days"></i>
+            </div>
+            <h3 class="font-medium text-gray-700 text-sm text-center">Dars jadvali</h3>
+        </div>
+
+        <!-- O'zlashtirish (Baholar) -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform">
+            <div class="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-chart-pie"></i>
+            </div>
+            <h3 class="font-medium text-gray-700 text-sm text-center">O'zlashtirish</h3>
+        </div>
+
+        <!-- Fanlar -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform">
+            <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-book"></i>
+            </div>
+            <h3 class="font-medium text-gray-700 text-sm text-center">Fanlar</h3>
+        </div>
+
+        <!-- AI Yordamchi (Sizning funksiyangiz) -->
+        <div class="bg-gradient-to-br from-indigo-500 to-purple-600 p-4 rounded-2xl shadow-md text-white flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform shadow-purple-200">
+            <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-robot"></i>
+            </div>
+            <h3 class="font-medium text-sm text-center">AI Yordamchi</h3>
+        </div>
+
+    </main>
+
+    <!-- Kichik statistika -->
+    <section class="px-4 mt-2">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 flex justify-between items-center">
+            <div>
+                <p class="text-xs text-gray-500 uppercase font-semibold">Umumiy GPA</p>
+                <p class="text-2xl font-bold text-hemis-dark">4.2</p>
+            </div>
+            <div class="text-right">
+                <p class="text-xs text-gray-500 uppercase font-semibold">Kurs</p>
+                <p class="text-2xl font-bold text-hemis-dark">3-Kurs</p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Telegram Web App ni ishga tushirish
+        let tg = window.Telegram.WebApp;
+        tg.expand(); // Ekranni to'liq egallash
+    </script>
 </body>
 </html>
