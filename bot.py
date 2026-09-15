@@ -29,15 +29,13 @@ def get_portal_keyboard(user_id: int):
     url = f"{WEBAPP_URL}?user_id={user_id}"
     return ReplyKeyboardMarkup(
         keyboard=[
-            [
-                KeyboardButton(
-                    text="🚀 Talaba Portalini ochish",
-                    web_app=WebAppInfo(url=url)
-                )
-            ]
+            [KeyboardButton(text="🚀 Talaba Portalini ochish", web_app=WebAppInfo(url=url))],
+            [KeyboardButton(text="👤 Profil"), KeyboardButton(text="📅 Dars jadvali")],
+            [KeyboardButton(text="📊 Baholar"), KeyboardButton(text="⏱ Davomat")],
+            [KeyboardButton(text="🔔 Eslatmani tekshirish")]
         ],
         resize_keyboard=True
-    )
+       
 
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message, state: FSMContext):
