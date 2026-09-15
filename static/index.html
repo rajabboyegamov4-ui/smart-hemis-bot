@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Talaba Smart Portali | HEMIS & AI</title>
+  
+  <!-- Telegram Web App kutubxonasi qo'shildi -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -147,27 +151,43 @@
 
   <!-- Frontend JavaScript -->
   <script>
-    // 1. Dashboard yuklash
+    // 1. Dashboard yuklash (Yangilangan va to'g'rilangan)
     async function loadDashboard() {
       try {
-        const res = await fetch('/api/dashboard');
-        const data = await res.json();
+        // Telegramdan foydalanuvchi ID sini olish
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Oynani to'liq ekranga ochish
+        const userId = tg.initDataUnsafe?.user?.id;
 
-        // Profil
-        const p = data.profile || {};
-        const name = p.full_name || p.name || 'Talaba';
-        document.getElementById('user-badge').innerText = name;
-        document.getElementById('prof-name').innerText = name;
-        document.getElementById('prof-faculty').innerText = p.faculty?.name || '—';
-        document.getElementById('prof-group').innerText = p.group?.name || '—';
+        if (!userId) {
+          console.error("Telegram ID topilmadi");
+          document.getElementById('user-badge').innerText = "Tizimga kiring";
+          return;
+        }
 
-        // Jadval
+        // Profil ma'lumotlarini olish (user_id orqali)
+        const profRes = await fetch(`/api/profile?user_id=${userId}`);
+        const p = await profRes.json();
+
+        if (p && !p.error) {
+          const name = p.full_name || p.name || 'Talaba';
+          document.getElementById('user-badge').innerText = name;
+          document.getElementById('prof-name').innerText = name;
+          document.getElementById('prof-faculty').innerText = p.faculty?.name || '—';
+          document.getElementById('prof-group').innerText = p.group?.name || '—';
+        }
+
+        // Dars jadvalini olish (user_id orqali)
+        const schRes = await fetch(`/api/schedule?user_id=${userId}`);
+        const schedule = await schRes.json();
+
         const schContainer = document.getElementById('schedule-list');
         schContainer.innerHTML = '';
-        if (!data.schedule || data.schedule.length === 0) {
+        
+        if (!schedule || schedule.error || schedule.length === 0) {
           schContainer.innerHTML = '<p class="text-xs text-slate-400">Bugun faol darslar yo\'q.</p>';
         } else {
-          data.schedule.forEach(item => {
+          schedule.forEach(item => {
             schContainer.innerHTML += `
               <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
                 <div>
@@ -183,24 +203,9 @@
           });
         }
 
-        // Baholar
-        const grContainer = document.getElementById('grades-list');
-        grContainer.innerHTML = '';
-        if (!data.performance || data.performance.length === 0) {
-          grContainer.innerHTML = '<p class="text-xs text-slate-400">Baholar topilmadi.</p>';
-        } else {
-          data.performance.forEach(item => {
-            grContainer.innerHTML += `
-              <div class="flex justify-between items-center py-1.5 border-b border-slate-50 last:border-0">
-                <span class="text-xs text-slate-700 truncate max-w-[170px]">${item.subject?.name || 'Fan'}</span>
-                <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">${item.total_grade || item.grade || '—'} ball</span>
-              </div>
-            `;
-          });
-        }
-
-        // Davomat
-        document.getElementById('att-hours').innerText = data.attendance?.absent_hours || 0;
+        // Hozirgi backendda baholar va davomat API si yo'qligi uchun:
+        document.getElementById('grades-list').innerHTML = '<p class="text-xs text-slate-400">Hozircha tizimda yo\'q</p>';
+        document.getElementById('att-hours').innerText = '0';
 
       } catch (err) {
         console.error("Dashboard yuklashda xato:", err);
