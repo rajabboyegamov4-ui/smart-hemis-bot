@@ -8,3 +8,4 @@ PyPDF2==3.0.1
 apscheduler==3.10.4
 google-generativeai
 python-dotenv
+anthropic
