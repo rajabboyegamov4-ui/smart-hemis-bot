@@ -144,9 +144,10 @@ async def create_presentation(message: types.Message):
 async def cmd_start(message: types.Message, state: FSMContext):
     await state.clear()
     user = await get_user(message.from_user.id)
-    
-    if user and user["hemis_token"]:
-        name = user["full_name"] or message.from_user.first_name
+
+    # Foydalanuvchi va uning tokeni borligini xavfsiz tekshiramiz
+    if user and user.get("hemis_token"):
+        name = user.get("full_name") or message.from_user.first_name
         await message.answer(
             f"Assalomu alaykum, {name}!\n\nPortalga xush kelibsiz.",
             reply_markup=get_portal_keyboard(message.from_user.id)
@@ -156,6 +157,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
             "👋 Assalomu alaykum!\n\nTalaba portalidan foydalanish uchun HEMIS **Talaba ID (Login)**ingizni kiriting:",
             reply_markup=ReplyKeyboardRemove()
         )
+        # MANA SHU QATOR ELSE NING ICHIDA BO'LISHI SHART:
         await state.set_state(LoginState.waiting_for_login)
 
 @dp.message(LoginState.waiting_for_login)
