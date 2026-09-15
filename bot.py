@@ -14,7 +14,7 @@ from config import BOT_TOKEN
 from services.hemis_service import hemis_client
 from database import init_db, get_user, save_user
 
-WEBAPP_URL = "https://abnormal-density-monsoon.ngrok-free.dev"
+WEBAPP_URL = "https://smart-hemis-bot.onrender.com"
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
