@@ -9,7 +9,12 @@ load_dotenv(dotenv_path=env_path)
 # Kalitlarni xavfsiz tarzda server muhitidan (environment) olamiz
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")  # Claude uchun xavfsiz kalit
 
 HEMIS_BASE_URL = os.getenv("HEMIS_BASE_URL", "https://student.iiau.uz/rest/v1").rstrip("/")
 HEMIS_LOGIN = os.getenv("HEMIS_LOGIN")
 HEMIS_PASSWORD = os.getenv("HEMIS_PASSWORD")
+
+# Xavfsizlik uchun tekshiruv (ixtiyoriy, lekin foydali)
+if not BOT_TOKEN:
+    raise ValueError("DIQQAT: BOT_TOKEN topilmadi! .env yoki Render Environment variables ni tekshiring.")
