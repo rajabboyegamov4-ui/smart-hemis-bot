@@ -6,7 +6,7 @@ async def get_hemis_token(login, password):
     data = {"login": login, "password": password}
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, data=data) as response:
+            async with session.post(url, data=data, timeout=10) as response:
                 if response.status == 200:
                     res = await response.json()
                     return res.get('data', {}).get('token')
@@ -17,14 +17,14 @@ async def get_hemis_token(login, password):
 async def get_hemis_profile(login, password):
     token = await get_hemis_token(login, password)
     if not token:
-        return "❌ HEMIS ga ulanishda xatolik! Login yoki parol noto'g'ri."
+        return "❌ HEMIS bilan xatolik! Login yoki parol noto'g'ri yoki server ishlamayapti."
     
     url = f"{HEMIS_BASE_URL}/account/me"
     headers = {"Authorization": f"Bearer {token}"}
     
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers) as response:
+            async with session.get(url, headers=headers, timeout=10) as response:
                 if response.status == 200:
                     res = await response.json()
                     data = res.get('data', {})
@@ -40,10 +40,9 @@ async def get_hemis_profile(login, password):
                         f"📈 **Kurs:** {kurs}\n"
                         f"👥 **Guruh:** {guruh}"
                     )
-                return "❌ Profil ma'lumotlarini olishda xatolik yuz berdi."
+                return "❌ Profil ma'lumotlarini o'qishda xatolik yuz berdi."
     except Exception as e:
         return f"❌ Server xatosi: {str(e)}"
 
-# MANA SHU FUNKSIYA YETISHMAYOTGAN EDI:
 async def get_hemis_schedule():
-    return "📅 Dars jadvali tizimi ulanmoqda... (Tez kunda)"
+    return "📅 Dars jadvali tizimi tez kunda to'liq ishga tushadi!"
