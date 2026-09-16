@@ -44,5 +44,48 @@ async def get_hemis_profile(login, password):
     except Exception as e:
         return f"❌ Server xatosi: {str(e)}"
 
-async def get_hemis_schedule():
-    return "📅 Dars jadvali tizimi tez kunda to'liq ishga tushadi!"
+async def get_hemis_schedule(login, password):
+    token = await get_hemis_token(login, password)
+    if not token:
+        return "❌ HEMIS bilan xatolik! Login yoki parol noto'g'ri."
+    
+    # HEMIS API orqali dars jadvalini olish endpointi
+    url = f"{HEMIS_BASE_URL}/education/schedule"
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, timeout=10) as response:
+                if response.status == 200:
+                    res = await response.json()
+                    data = res.get('data', [])
+                    
+                    if not data:
+                        return "📅 Hozircha joriy hafta uchun dars jadvali topilmadi."
+                    
+                    schedule_text = "📅 **Sizning Dars Jadvalingiz:**\n\n"
+                    
+                    for day in data:
+                        kun_nomi = day.get('week_name', 'Kun')
+                        sana = day.get('date', '')
+                        schedule_text += f"📌 **{kun_nomi} ({sana})**\n"
+                        
+                        lessons = day.get('pairs', [])
+                        if not lessons:
+                            schedule_text += "   *Darslar yo'q (Dam olish kuni)*\n\n"
+                        else:
+                            for lesson in lessons:
+                                vaqt = lesson.get('start_time', '')
+                                fan = lesson.get('subject', {}).get('name', 'Fan nomi yo\'q')
+                                xona = lesson.get('room', {}).get('name', 'Xona ko\'rsatilmagan')
+                                oqituvchi = lesson.get('employee', {}).get('name', '')
+                                
+                                schedule_text += f"  🕒 {vaqt} | **{fan}**\n  📍 Xona: {xona} | 👨‍🏫 {oqituvchi}\n\n"
+                        
+                        schedule_text += "-------------------\n"
+                    
+                    return schedule_text
+                
+                return "❌ Dars jadvalini yuklab bo'lmadi. HEMIS vaqtincha ishlamayotgan bo'lishi mumkin."
+    except Exception as e:
+        return f"❌ Jadvalni olishda xatolik: {str(e)}"
