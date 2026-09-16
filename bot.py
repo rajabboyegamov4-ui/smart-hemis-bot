@@ -125,6 +125,7 @@ async def start_handler(message: Message, state: FSMContext):
     lang = get_user_language(user_id)
     t = LANG_TEXTS[lang]
     
+    # Agar foydalanuvchi bazada mavjud bo'lsa, qaytadan ro'yxatdan o'tkazmaymiz
     if user_data:
         await message.answer(t['welcome'], reply_markup=get_kb(lang))
     else:
@@ -246,7 +247,6 @@ async def schedule_handler(message: Message):
     await kutilish.delete()
     await message.answer(jadval_matni, parse_mode="Markdown")
 
-# --- BAHOLAR VA DAVOMAT TUGMASI Ulandi ---
 @dp.message(F.text.in_(["📊 Baholar va Davomat", "📊 Оценки и посещаемость", "📊 Grades & Attendance", "📊 Notlar ve Devamsızlık"]))
 async def grades_handler(message: Message):
     user_id = message.from_user.id
@@ -292,6 +292,17 @@ async def test_handler(message: Message):
 async def general_text_handler(message: Message, state: FSMContext):
     current_state = await state.get_state()
     if current_state is not None:
+        return
+
+    # Barcha tillardagi menyu tugmalari ro'yxati (Bularga Gemini javob bermasligi kerak)
+    menu_texts = [
+        "🌐 Tilni o'zgartirish", "🌐 Изменить язык", "🌐 Change Language", "🌐 Dili Değiştir",
+        "👤 Profil", "👤 Профиль", "👤 Profile",
+        "📅 Dars jadvali", "📅 Расписание", "📅 Schedule", "📅 Ders Programı",
+        "📊 Baholar va Davomat", "📊 Оценки и посещаемость", "📊 Grades & Attendance", "📊 Notlar ve Devamsızlık",
+        "🚀 Talaba Portalini ochish", "🚀 Открыть портал", "🚀 Open Student Portal", "🚀 Öğrenci Portalını Aç"
+    ]
+    if message.text in menu_texts:
         return
 
     # Foydalanuvchi ro'yxatdan o'tganligini tekshiramiz
