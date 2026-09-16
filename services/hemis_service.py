@@ -43,3 +43,7 @@ async def get_hemis_profile(login, password):
                 return "❌ Profil ma'lumotlarini olishda xatolik yuz berdi."
     except Exception as e:
         return f"❌ Server xatosi: {str(e)}"
+
+# MANA SHU FUNKSIYA YETISHMAYOTGAN EDI:
+async def get_hemis_schedule():
+    return "📅 Dars jadvali tizimi ulanmoqda... (Tez kunda)"
