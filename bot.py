@@ -2,10 +2,11 @@ import asyncio
 import logging
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, WebAppInfo
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
+# Bizning fayllar
 from config import BOT_TOKEN 
 from services.gemini_service import ask_gemini
 from services.hemis_service import get_hemis_profile
@@ -24,10 +25,10 @@ class RegisterState(StatesGroup):
     waiting_for_login = State()
     waiting_for_password = State()
 
-# --- TUGMALAR ---
+# --- TUGMALAR (Web App to'g'ridan-to'g'ri menyu tugmasiga ulangan) ---
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text="🚀 Talaba Portalini ochish")],
+        [KeyboardButton(text="🚀 Talaba Portalini ochish", web_app=WebAppInfo(url="https://smart-hemis-bot.onrender.com"))],
         [KeyboardButton(text="👤 Profil"), KeyboardButton(text="📅 Dars jadvali")],
         [KeyboardButton(text="🌐 Tilni o'zgartirish"), KeyboardButton(text="📊 Baholar va Davomat")]
     ],
@@ -88,19 +89,6 @@ async def profil_handler(message: Message):
     
     await kutilish.delete()
     await message.answer(profil_malumoti, parse_mode="Markdown")
-
-@dp.message(F.text == "🚀 Talaba Portalini ochish")
-async def portal_handler(message: Message):
-    # Tugmaning o'zini bosganda to'g'ridan-to'g'ri brauzerni ochuvchi inline tugma chiqadi
-    keyboard = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🚀 Talaba Portalini ochish", url="https://smart-hemis-bot.onrender.com")]
-        ]
-    )
-    await message.answer(
-        "🌐 Pastdagi tugmani bosing:", 
-        reply_markup=keyboard
-    )
 
 @dp.message(F.text.in_(["📅 Dars jadvali", "📊 Baholar va Davomat", "🌐 Tilni o'zgartirish"]))
 async def boshqa_tugmalar(message: Message):
