@@ -91,16 +91,15 @@ async def profil_handler(message: Message):
 
 @dp.message(F.text == "🚀 Talaba Portalini ochish")
 async def portal_handler(message: Message):
-    # Veb-saytni to'g'ridan-to'g'ri ochadigan Inline tugma
+    # Tugmaning o'zini bosganda to'g'ridan-to'g'ri brauzerni ochuvchi inline tugma chiqadi
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="🌐 Brauzerda ochish", url="https://smart-hemis-bot.onrender.com")]
+            [InlineKeyboardButton(text="🚀 Talaba Portalini ochish", url="https://smart-hemis-bot.onrender.com")]
         ]
     )
     await message.answer(
-        "🌐 **Sizning shaxsiy Web Portalingiz tayyor!**\n\nQuyidagi tugmani bosing:", 
-        reply_markup=keyboard,
-        parse_mode="Markdown"
+        "🌐 Pastdagi tugmani bosing:", 
+        reply_markup=keyboard
     )
 
 @dp.message(F.text.in_(["📅 Dars jadvali", "📊 Baholar va Davomat", "🌐 Tilni o'zgartirish"]))
