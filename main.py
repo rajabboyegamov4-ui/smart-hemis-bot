@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from services.hemis_service import hemis_client
+# from services.hemis_service import hemis_client
 from services.gemini_service import ask_gemini
 from database import get_user, init_db
 
