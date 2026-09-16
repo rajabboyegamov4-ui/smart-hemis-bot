@@ -9,7 +9,7 @@ from aiogram.fsm.state import State, StatesGroup
 # Bizning fayllar
 from config import BOT_TOKEN 
 from services.gemini_service import ask_gemini
-from services.hemis_service import get_hemis_profile, get_hemis_schedule
+from services.hemis_service import get_hemis_profile, get_hemis_schedule, get_hemis_grades_and_attendance
 from database import init_db, save_user, get_user, update_user_language, get_user_language
 
 logging.basicConfig(level=logging.INFO)
@@ -31,6 +31,7 @@ LANG_TEXTS = {
         'not_reg': "Siz ro'yxatdan o'tmagansiz. Iltimos /start ni bosing.",
         'wait_profile': "🔄 HEMIS tizimiga ulanmoqda...",
         'wait_schedule': "🔄 Dars jadvali HEMIS tizimidan yuklanmoqda...",
+        'wait_grades': "🔄 Baholar va o'zlashtirish yuklanmoqda...",
         'choose_lang': "🌐 O'zingizga qulay tilni tanlang:",
         'lang_changed': "✅ Til muvaffaqiyatli o'zgartirildi: O'zbek tili 🇺🇿",
         'menu_portal': "🚀 Talaba Portalini ochish",
@@ -49,6 +50,7 @@ LANG_TEXTS = {
         'not_reg': "Вы не зарегистрированы. Пожалуйста, отправьте /start.",
         'wait_profile': "🔄 Подключение к системе HEMIS...",
         'wait_schedule': "🔄 Загрузка расписания из HEMIS...",
+        'wait_grades': "🔄 Загрузка оценок и успеваемости...",
         'choose_lang': "🌐 Выберите удобный язык:",
         'lang_changed': "✅ Язык успешно изменен: Русский 🇷🇺",
         'menu_portal': "🚀 Открыть портал",
@@ -67,6 +69,7 @@ LANG_TEXTS = {
         'not_reg': "You are not registered. Please press /start.",
         'wait_profile': "🔄 Connecting to HEMIS system...",
         'wait_schedule': "🔄 Loading schedule from HEMIS...",
+        'wait_grades': "🔄 Loading grades and attendance...",
         'choose_lang': "🌐 Choose your preferred language:",
         'lang_changed': "✅ Language successfully changed: English 🇬🇧",
         'menu_portal': "🚀 Open Student Portal",
@@ -85,6 +88,7 @@ LANG_TEXTS = {
         'not_reg': "Kayıtlı değilsiniz. Lütfen /start tuşuna basın.",
         'wait_profile': "🔄 HEMIS sistemine bağlanılıyor...",
         'wait_schedule': "🔄 HEMIS'ten ders programı yükleniyor...",
+        'wait_grades': "🔄 Notlar ve devam durumu yükleniyor...",
         'choose_lang': "🌐 Size uygun dili seçin:",
         'lang_changed': "✅ Dil başarıyla değiştirildi: Türkçe 🇹🇷",
         'menu_portal': "🚀 Öğrenci Portalını Aç",
@@ -242,21 +246,58 @@ async def schedule_handler(message: Message):
     await kutilish.delete()
     await message.answer(jadval_matni, parse_mode="Markdown")
 
+# --- BAHOLAR VA DAVOMAT TUGMASI Ulandi ---
 @dp.message(F.text.in_(["📊 Baholar va Davomat", "📊 Оценки и посещаемость", "📊 Grades & Attendance", "📊 Notlar ve Devamsızlık"]))
-async def boshqa_tugmalar(message: Message):
-    lang = get_user_language(message.from_user.id)
+async def grades_handler(message: Message):
+    user_id = message.from_user.id
+    user_data = get_user(user_id)
+    lang = get_user_language(user_id)
     t = LANG_TEXTS[lang]
-    await message.answer(t['soon'])
+    
+    if not user_data:
+        await message.answer(t['not_reg'])
+        return
+    
+    login, password = user_data
+    kutilish = await message.answer(t['wait_grades'])
+    
+    grades_matni = await get_hemis_grades_and_attendance(login, password)
+    
+    await kutilish.delete()
+    await message.answer(grades_matni, parse_mode="Markdown")
 
-# --- GEMINI (AI) ---
+# --- GEMINI (AI) VA TEST ---
 @dp.message(Command("ppt"))
 async def ppt_handler(message: Message):
     await message.answer("🚀 **Taqdimot tayyorlash (PPT)** tez kunda pullik obunada ishga tushadi!", parse_mode="Markdown")
+
+@dp.message(Command("test"))
+async def test_handler(message: Message):
+    user_text = message.text.replace("/test", "").strip()
+    if not user_text:
+        await message.answer("⚠️ Iltimos, test mavzusini yozing. Masalan:\n`/test O'zbekiston tarixi 10 ta savol`", parse_mode="Markdown")
+        return
+
+    kutilish = await message.answer("✍️ Testlar tuzilmoqda, biroz kuting...")
+    try:
+        prompt = f"Quyidagi mavzu bo'yicha sifatli test tuzib ber. Variantlari bilan bo'lsin va oxirida javoblarini ham ko'rsat:\n\n{user_text}"
+        javob = await ask_gemini(prompt)
+        await kutilish.delete()
+        await message.answer(javob, parse_mode="Markdown")
+    except Exception as e:
+        await kutilish.delete()
+        await message.answer(f"❌ Xatolik yuz berdi: {str(e)}")
 
 @dp.message()
 async def general_text_handler(message: Message, state: FSMContext):
     current_state = await state.get_state()
     if current_state is not None:
+        return
+
+    # Foydalanuvchi ro'yxatdan o'tganligini tekshiramiz
+    user_data = get_user(message.from_user.id)
+    if not user_data:
+        await message.answer("Siz ro'yxatdan o'tmagansiz. Iltimos /start ni bosing.")
         return
 
     kutilish_xabari = await message.answer("💬 Tahlil qilinmoqda...")
@@ -266,7 +307,7 @@ async def general_text_handler(message: Message, state: FSMContext):
         await message.answer(gemini_javobi, parse_mode="Markdown")
     except Exception as e:
         await kutilish_xabari.delete()
-        await message.answer(f"Xatolik yuz berdi: {str(e)}")
+        await message.answer(f"❌ Xatolik yuz berdi: {str(e)}")
 
 async def main():
     await dp.start_polling(bot)
