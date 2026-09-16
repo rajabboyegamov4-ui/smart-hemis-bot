@@ -2,7 +2,7 @@ import asyncio
 import logging
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
@@ -91,12 +91,16 @@ async def profil_handler(message: Message):
 
 @dp.message(F.text == "🚀 Talaba Portalini ochish")
 async def portal_handler(message: Message):
+    # Veb-saytni to'g'ridan-to'g'ri ochadigan Inline tugma
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🌐 Brauzerda ochish", url="https://smart-hemis-bot.onrender.com")]
+        ]
+    )
     await message.answer(
-        "🌐 **Sizning shaxsiy Web Portalingiz:**\n\n"
-        "Saytga kirish uchun quyidagi havolani bosing:\n"
-        "👉 https://smart-hemis-bot.onrender.com", 
-        parse_mode="Markdown", 
-        disable_web_page_preview=False
+        "🌐 **Sizning shaxsiy Web Portalingiz tayyor!**\n\nQuyidagi tugmani bosing:", 
+        reply_markup=keyboard,
+        parse_mode="Markdown"
     )
 
 @dp.message(F.text.in_(["📅 Dars jadvali", "📊 Baholar va Davomat", "🌐 Tilni o'zgartirish"]))
