@@ -1,35 +1,22 @@
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-import google.generativeai as genai
+import aiohttp
 from config import GEMINI_API_KEY
 
-# Gemini API sozlamalari
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
-
-# Modelni tanlash (faqat model nomi qoladi, xato beradigan qismi olib tashlandi)
-model = genai.GenerativeModel("gemini-1.5-flash")
-
-async def ask_gemini(prompt: str, context: str = "") -> str:
-    """Gemini AI ga asinxron so'rov yuborish va javob olish."""
-    try:
-        # system_instruction vazifasini bajaruvchi matnni pastga tushirdik
-        bot_vazifasi = (
-            "Siz talabaning shaxsiy aqlli yordamchisisiz. "
-            "Talabaning dars jadvali, baholari va HEMIS ma'lumotlari bo'yicha berilgan "
-            "savollariga aniq, xushmuomala va o'zbek tilida yordam bering.\n\n"
-        )
-        
-        if context:
-            full_prompt = f"{bot_vazifasi}Talaba ma'lumotlari va kontekst:\n{context}\n\nFoydalanuvchi savoli: {prompt}"
-        else:
-            full_prompt = f"{bot_vazifasi}Foydalanuvchi savoli: {prompt}"
-        
-        # Asinxron chaqiruv
-        response = await model.generate_content_async(full_prompt)
-        return response.text
-    except Exception as e:
-        print(f"Gemini API Error: {e}")
-        return "Kechirasiz, AI yordamchisiga ulanishda xatolik yuz berdi."
+async def ask_gemini(prompt_text: str) -> str:
+    """Gemini orqali oddiy savollarga javob olish (Raw REST API usuli)"""
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+    headers = {'Content-Type': 'application/json'}
+    data = {
+        "contents": [{"parts": [{"text": prompt_text}]}],
+        "systemInstruction": {
+            "parts": [{"text": "Siz islomshunoslik fakulteti talabasining shaxsiy yordamchisisiz. Qisqa, aniq va kundalik vazifalarda tezkor foydali javob bering."}]
+        }
+    }
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url, headers=headers, json=data) as response:
+            if response.status == 200:
+                result = await response.json()
+                return result['candidates'][0]['content']['parts'][0]['text']
+            else:
+                error_info = await response.text()
+                return f"Gemini tizimida xatolik: {error_info}"
