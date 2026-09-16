@@ -2,11 +2,10 @@ import asyncio
 import logging
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
-# Bizning fayllar
 from config import BOT_TOKEN 
 from services.gemini_service import ask_gemini
 from services.hemis_service import get_hemis_profile
@@ -38,20 +37,27 @@ main_menu = ReplyKeyboardMarkup(
 # --- START VA REGISTRATSIYA ---
 @dp.message(CommandStart())
 async def start_handler(message: Message, state: FSMContext):
+    await state.clear()
     user_data = get_user(message.from_user.id)
     
     if user_data:
-        # Agar talaba oldin ro'yxatdan o'tgan bo'lsa
         await message.answer("Xush kelibsiz! Bot xizmatingizga tayyor.", reply_markup=main_menu)
     else:
-        # Yangi talaba bo'lsa
-        await message.answer("👋 Assalomu alaykum! Talabalar botiga xush kelibsiz.\n\n"
-                             "Tizimdan foydalanish uchun HEMIS loginingizni (talaba ID raqamini) yuboring:")
+        await message.answer(
+            "👋 Assalomu alaykum! Talabalar botiga xush kelibsiz.\n\n"
+            "Tizimdan foydalanish uchun HEMIS loginingizni (talaba ID raqamini) yuboring:",
+            reply_markup=ReplyKeyboardRemove()
+        )
         await state.set_state(RegisterState.waiting_for_login)
 
 @dp.message(RegisterState.waiting_for_login)
 async def process_login(message: Message, state: FSMContext):
-    await state.update_data(login=message.text.strip())
+    login_text = message.text.strip()
+    if not login_text.isdigit():
+        await message.answer("⚠️ Login faqat raqamlardan iborat bo'lishi kerak (Talaba ID raqami). Qaytadan kiriting:")
+        return
+        
+    await state.update_data(login=login_text)
     await message.answer("Yaxshi! Endi HEMIS parolingizni yuboring:")
     await state.set_state(RegisterState.waiting_for_password)
 
@@ -78,7 +84,6 @@ async def profil_handler(message: Message):
     login, password = user_data
     kutilish = await message.answer("🔄 HEMIS tizimiga ulanmoqda...")
     
-    # Bazadagi login parolni yuboramiz
     profil_malumoti = await get_hemis_profile(login, password)
     
     await kutilish.delete()
@@ -98,14 +103,13 @@ async def portal_handler(message: Message):
 async def boshqa_tugmalar(message: Message):
     await message.answer("Bu bo'lim tez kunda ishga tushadi! 🛠")
 
-# --- PPT VA GEMINI (AI) ---
+# --- GEMINI (AI) ---
 @dp.message(Command("ppt"))
 async def ppt_handler(message: Message):
     await message.answer("🚀 **Taqdimot tayyorlash (PPT)** tez kunda pullik obunada ishga tushadi!", parse_mode="Markdown")
 
 @dp.message()
 async def general_text_handler(message: Message, state: FSMContext):
-    # Agar foydalanuvchi registratsiyadan o'tayotgan bo'lsa, AI ga bormasligi kerak
     current_state = await state.get_state()
     if current_state is not None:
         return
@@ -117,7 +121,7 @@ async def general_text_handler(message: Message, state: FSMContext):
         await message.answer(gemini_javobi, parse_mode="Markdown")
     except Exception as e:
         await kutilish_xabari.delete()
-        await message.answer(f"Xatolik: {str(e)}")
+        await message.answer(f"Xatolik yuz berdi: {str(e)}")
 
 async def main():
     await dp.start_polling(bot)
