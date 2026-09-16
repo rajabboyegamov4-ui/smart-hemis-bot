@@ -9,7 +9,7 @@ from aiogram.fsm.state import State, StatesGroup
 # Bizning fayllar
 from config import BOT_TOKEN 
 from services.gemini_service import ask_gemini
-from services.hemis_service import get_hemis_profile
+from services.hemis_service import get_hemis_profile, get_hemis_schedule
 from database import init_db, save_user, get_user
 
 logging.basicConfig(level=logging.INFO)
@@ -90,7 +90,22 @@ async def profil_handler(message: Message):
     await kutilish.delete()
     await message.answer(profil_malumoti, parse_mode="Markdown")
 
-@dp.message(F.text.in_(["📅 Dars jadvali", "📊 Baholar va Davomat", "🌐 Tilni o'zgartirish"]))
+@dp.message(F.text == "📅 Dars jadvali")
+async def schedule_handler(message: Message):
+    user_data = get_user(message.from_user.id)
+    if not user_data:
+        await message.answer("Siz ro'yxatdan o'tmagansiz. Iltimos /start ni bosing.")
+        return
+    
+    login, password = user_data
+    kutilish = await message.answer("🔄 Dars jadvali HEMIS tizimidan yuklanmoqda...")
+    
+    jadval_matni = await get_hemis_schedule(login, password)
+    
+    await kutilish.delete()
+    await message.answer(jadval_matni, parse_mode="Markdown")
+
+@dp.message(F.text.in_(["📊 Baholar va Davomat", "🌐 Tilni o'zgartirish"]))
 async def boshqa_tugmalar(message: Message):
     await message.answer("Bu bo'lim tez kunda ishga tushadi! 🛠")
 
