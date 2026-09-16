@@ -7,7 +7,7 @@ from aiogram.types import Message
 # Config fayldan tokenni chaqiramiz
 from config import BOT_TOKEN 
 from services.gemini_service import ask_gemini
-from services.claude_service import ask_claude_for_ppt
+# Claude importini hozircha o'chirib turamiz yoki kerak bo'lganda ishlatamiz
 
 logging.basicConfig(level=logging.INFO)
 
@@ -16,36 +16,39 @@ dp = Dispatcher()
 
 @dp.message(CommandStart())
 async def start_handler(message: Message):
-    await message.answer(
-        "Assalomu alaykum! Men sizning maxsus gibrid botingizman.\n\n"
-        "⚡️ Oddiy savollarni yozsangiz — **Gemini** tezkor javob beradi.\n"
-        "📊 `/ppt [mavzu]` deb yozsangiz — **Claude** sizga chiroyli taqdimot tayyorlaydi."
+    welcome_text = (
+        "🎓 **Assalomu alaykum! Talabalarning shaxsiy aqlli yordamchisiga xush kelibsiz!**\n\n"
+        "Men o'qish jarayonida sizga eng kerakli vazifalarni bajarishda yordam beraman. Nimalarga qodirman?\n\n"
+        "📚 **Savol-javob:** Istalgan mavzuda (ayniqsa, islomshunoslik, tarix yoki boshqa fanlar) savol bering va aniq javob oling.\n"
+        "🎓 **HEMIS Integratsiyasi:** Dars jadvali, baholar va davomatni tezda bilib oling (menyu orqali).\n"
+        "📝 **Test va Konspektlar:** Menga matn yoki kitob tashlab, o'sha mavzuda testlar tuzishni yoki xulosa yozib berishni so'rashingiz mumkin.\n"
+        "📊 **Taqdimotlar (/ppt):** Slaydlar uchun mukammal struktura va matnlar tayyorlash xizmati.\n\n"
+        "Shunchaki o'zingizni qiziqtirgan savolni yozing va biz ishni boshlaymiz! 🚀"
     )
+    await message.answer(welcome_text, parse_mode="Markdown")
 
 @dp.message(Command("ppt"))
 async def ppt_handler(message: Message):
-    mavzu = message.text.replace("/ppt", "").strip()
-    if not mavzu:
-        await message.answer("Iltimos, mavzuni kiriting. Masalan: `/ppt O'zbekiston vatanim mening`", parse_mode="Markdown")
-        return
-    
-    kutilish_xabari = await message.answer("⏳ Claude taqdimot ma'lumotlarini chuqur tahlil qilmoqda... Iltimos kuting.")
-    
-    # Katta vazifani Claude'ga yuboramiz
-    claude_javobi = await ask_claude_for_ppt(mavzu)
-    
-    await kutilish_xabari.delete()
-    await message.answer(f"📊 **Taqdimot tayyor (Claude 3.5):**\n\n{claude_javobi}")
+    # Bu yerda API o'rniga mijozlarni tayyorlovchi xabar chiqadi
+    promo_text = (
+        "🚀 **Taqdimot tayyorlash (PPT) xizmati haqida:**\n\n"
+        "Ushbu funksiya dunyodagi eng kuchli **Claude 3.5 Sonnet** sun'iy intellekti asosida ishlaydi. "
+        "Sizga mukammal slaydlar va taqdimot matnlarini yozib beradigan, vaqtingizni 100 barobar tejaydigan bu maxsus rejim "
+        "**eng yaqin fursatlarda pullik obuna (podpiska) doirasida ishga tushiriladi!**\n\n"
+        "Barcha talabalar uchun maxsus arzon tariflar tayyorlanmoqda. Bizni kuzatib boring! 💎"
+    )
+    await message.answer(promo_text, parse_mode="Markdown")
 
 @dp.message()
 async def general_text_handler(message: Message):
-    kutilish_xabari = await message.answer("💬 Gemini o'ylamoqda...")
+    # Agar foydalanuvchi buyruq emas, oddiy matn yozsa, Gemini ishga tushadi
+    kutilish_xabari = await message.answer("💬 Tahlil qilinmoqda...")
     
     # Kundalik savollarni Gemini'ga yuboramiz
     gemini_javobi = await ask_gemini(message.text)
     
     await kutilish_xabari.delete()
-    await message.answer(gemini_javobi)
+    await message.answer(gemini_javobi, parse_mode="Markdown")
 
 async def main():
     await dp.start_polling(bot)
