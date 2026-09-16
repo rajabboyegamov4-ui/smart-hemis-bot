@@ -84,7 +84,11 @@ async def profil_handler(message: Message):
     await kutilish.delete()
     await message.answer(profil_malumoti, parse_mode="Markdown")
 
-@dp.message(F.text.in_(["📅 Dars jadvali", "📊 Baholar va Davomat", "🌐 Tilni o'zgartirish", "🚀 Talaba Portalini ochish"]))
+@dp.message(F.text == "🚀 Talaba Portalini ochish")
+async def portal_handler(message: Message):
+    await message.answer("🌐 Talaba portaliga ulanish uchun havola: [HEMIS Portal](https://student.iiau.uz/)", parse_mode="Markdown", disable_web_page_preview=True)
+
+@dp.message(F.text.in_(["📅 Dars jadvali", "📊 Baholar va Davomat", "🌐 Tilni o'zgartirish"]))
 async def boshqa_tugmalar(message: Message):
     await message.answer("Bu bo'lim tez kunda ishga tushadi! 🛠")
 
