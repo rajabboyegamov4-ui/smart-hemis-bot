@@ -5,18 +5,21 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-# from services.hemis_service import hemis_client
+# Yangi tizimga mos importlar
+from services.hemis_service import get_hemis_profile, get_hemis_schedule
 from services.gemini_service import ask_gemini
 from database import get_user, init_db
 
 app = FastAPI(title="Talaba Smart Portali")
 
-# Statik fayllarni ulash
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Statik fayllarni ulash (Fayl topilmasa xato bermasligi uchun tekshiruv)
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.on_event("startup")
 async def on_startup():
-    await init_db()
+    # Yangi SQLite bazamiz uchun await kerak emas
+    init_db()
 
 @app.get("/")
 async def read_root():
@@ -24,7 +27,6 @@ async def read_root():
     html_path = os.path.join("static", "index.html")
     if os.path.exists(html_path):
         return FileResponse(html_path)
-    # Agar templates papkasida bo'lsa
     return FileResponse(os.path.join("templates", "index.html"))
 
 # API: Dars jadvali
@@ -33,12 +35,12 @@ async def api_schedule(user_id: Optional[int] = Query(None)):
     if not user_id:
         return JSONResponse({"error": "user_id kiritilmagan"}, status_code=400)
     
-    user = await get_user(user_id)
-    if not user or not user["hemis_token"]:
-        return JSONResponse({"error": "Foydalanuvchi topilmadi"}, status_code=404)
+    user = get_user(user_id)
+    if not user:
+        return JSONResponse({"error": "Foydalanuvchi topilmadi. Botdan ro'yxatdan o'ting."}, status_code=404)
 
-    data = await hemis_client.get_schedule(user["hemis_token"])
-    return JSONResponse(data or [])
+    data = await get_hemis_schedule()
+    return JSONResponse({"schedule": data})
 
 # API: Profil ma'lumotlari
 @app.get("/api/profile")
@@ -46,12 +48,14 @@ async def api_profile(user_id: Optional[int] = Query(None)):
     if not user_id:
         return JSONResponse({"error": "user_id kiritilmagan"}, status_code=400)
     
-    user = await get_user(user_id)
-    if not user or not user["hemis_token"]:
-        return JSONResponse({"error": "Foydalanuvchi topilmadi"}, status_code=404)
+    user = get_user(user_id)
+    if not user:
+        return JSONResponse({"error": "Foydalanuvchi topilmadi. Botdan ro'yxatdan o'ting."}, status_code=404)
 
-    data = await hemis_client.get_profile(user["hemis_token"])
-    return JSONResponse(data or {})
+    # Bazadan login va parolni olib HEMIS ga yuboramiz
+    login, password = user
+    data = await get_hemis_profile(login, password)
+    return JSONResponse({"profile": data})
 
 # API: Gemini AI bilan chat
 class ChatRequest(BaseModel):
@@ -60,15 +64,19 @@ class ChatRequest(BaseModel):
 
 @app.post("/api/chat")
 async def api_chat(req: ChatRequest):
-    context = ""
+    full_prompt = req.prompt
+    
+    # Agar foydalanuvchi botda bor bo'lsa, uning ma'lumotlarini AI ga beramiz
     if req.user_id:
-        user = await get_user(req.user_id)
-        if user and user["hemis_token"]:
-            profile = await hemis_client.get_profile(user["hemis_token"])
-            schedule = await hemis_client.get_schedule(user["hemis_token"])
-            context = f"Talaba: {profile}\nDars jadvali: {schedule}"
+        user = get_user(req.user_id)
+        if user:
+            login, password = user
+            profile = await get_hemis_profile(login, password)
+            schedule = await get_hemis_schedule()
+            
+            full_prompt = f"Foydalanuvchi ma'lumotlari:\n{profile}\n\nJadval:\n{schedule}\n\nFoydalanuvchi savoli: {req.prompt}"
 
-    reply = await ask_gemini(req.prompt, context=context)
+    reply = await ask_gemini(full_prompt)
     return {"reply": reply}
 
 if __name__ == "__main__":
