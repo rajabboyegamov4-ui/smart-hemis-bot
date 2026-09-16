@@ -1,7 +1,7 @@
 import sqlite3
 
 def init_db():
-    """Baza va jadvalni yaratish (birinchi marta ishga tushganda)"""
+    """Baza va jadvalni yaratish"""
     conn = sqlite3.connect("students.db")
     cursor = conn.cursor()
     cursor.execute('''
@@ -15,7 +15,7 @@ def init_db():
     conn.close()
 
 def save_user(telegram_id, login, password):
-    """Talabani bazaga qo'shish yoki yangilash"""
+    """Talabani bazaga qo'shish yoki yangilash (REPLACE orqali)"""
     conn = sqlite3.connect("students.db")
     cursor = conn.cursor()
     cursor.execute('''
