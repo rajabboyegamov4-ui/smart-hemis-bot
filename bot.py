@@ -86,7 +86,13 @@ async def profil_handler(message: Message):
 
 @dp.message(F.text == "🚀 Talaba Portalini ochish")
 async def portal_handler(message: Message):
-    await message.answer("🌐 Talaba portaliga ulanish uchun havola: [HEMIS Portal](https://student.iiau.uz/)", parse_mode="Markdown", disable_web_page_preview=True)
+    await message.answer(
+        "🌐 **Sizning shaxsiy Web Portalingiz:**\n\n"
+        "Saytga kirish uchun quyidagi havolani bosing:\n"
+        "👉 https://smart-hemis-bot.onrender.com", 
+        parse_mode="Markdown", 
+        disable_web_page_preview=False
+    )
 
 @dp.message(F.text.in_(["📅 Dars jadvali", "📊 Baholar va Davomat", "🌐 Tilni o'zgartirish"]))
 async def boshqa_tugmalar(message: Message):
