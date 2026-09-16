@@ -3,18 +3,29 @@ import logging
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 
-# Config va Servislarni chaqiramiz
+# Bizning fayllar
 from config import BOT_TOKEN 
 from services.gemini_service import ask_gemini
-from services.hemis_service import get_hemis_profile, get_hemis_schedule, get_hemis_grades
+from services.hemis_service import get_hemis_profile
+from database import init_db, save_user, get_user
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# --- 1. TUGMALAR YARATISH ---
+# Bazani ishga tushiramiz
+init_db()
+
+# --- HOLATLAR MASHINASI (FSM) ---
+class RegisterState(StatesGroup):
+    waiting_for_login = State()
+    waiting_for_password = State()
+
+# --- TUGMALAR ---
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="🚀 Talaba Portalini ochish")],
@@ -24,61 +35,71 @@ main_menu = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-# --- 2. START BUYRUG'I ---
+# --- START VA REGISTRATSIYA ---
 @dp.message(CommandStart())
-async def start_handler(message: Message):
-    welcome_text = (
-        "🎓 **Assalomu alaykum! Talabalarning shaxsiy aqlli yordamchisiga xush kelibsiz!**\n\n"
-        "Men o'qish jarayonida sizga eng kerakli vazifalarni bajarishda yordam beraman. Nimalarga qodirman?\n\n"
-        "📚 **Savol-javob:** Istalgan mavzuda (ayniqsa, islomshunoslik, tarix yoki boshqa fanlar) savol bering va aniq javob oling.\n"
-        "🎓 **HEMIS Integratsiyasi:** Dars jadvali, baholar va davomatni tezda bilib oling (menyu orqali).\n"
-        "📝 **Test va Konspektlar:** Menga matn yoki kitob tashlab, o'sha mavzuda testlar tuzishni yoki xulosa yozib berishni so'rashingiz mumkin.\n"
-        "📊 **Taqdimotlar (/ppt):** Slaydlar uchun mukammal struktura va matnlar tayyorlash xizmati.\n\n"
-        "Shunchaki o'zingizni qiziqtirgan savolni yozing va biz ishni boshlaymiz! 🚀"
-    )
-    await message.answer(welcome_text, parse_mode="Markdown", reply_markup=main_menu)
+async def start_handler(message: Message, state: FSMContext):
+    user_data = get_user(message.from_user.id)
+    
+    if user_data:
+        # Agar talaba oldin ro'yxatdan o'tgan bo'lsa
+        await message.answer("Xush kelibsiz! Bot xizmatingizga tayyor.", reply_markup=main_menu)
+    else:
+        # Yangi talaba bo'lsa
+        await message.answer("👋 Assalomu alaykum! Talabalar botiga xush kelibsiz.\n\n"
+                             "Tizimdan foydalanish uchun HEMIS loginingizni (talaba ID raqamini) yuboring:")
+        await state.set_state(RegisterState.waiting_for_login)
 
-# --- 3. HEMIS TUGMALARI UCHUN HANDLERLAR ---
+@dp.message(RegisterState.waiting_for_login)
+async def process_login(message: Message, state: FSMContext):
+    await state.update_data(login=message.text.strip())
+    await message.answer("Yaxshi! Endi HEMIS parolingizni yuboring:")
+    await state.set_state(RegisterState.waiting_for_password)
+
+@dp.message(RegisterState.waiting_for_password)
+async def process_password(message: Message, state: FSMContext):
+    password = message.text.strip()
+    data = await state.get_data()
+    login = data['login']
+    
+    # Bazaga saqlaymiz
+    save_user(message.from_user.id, login, password)
+    await state.clear()
+    
+    await message.answer("✅ Muvaffaqiyatli ro'yxatdan o'tdingiz!\n\nEndi botdan to'liq foydalanishingiz mumkin.", reply_markup=main_menu)
+
+# --- HEMIS TUGMALARI ---
 @dp.message(F.text == "👤 Profil")
 async def profil_handler(message: Message):
+    user_data = get_user(message.from_user.id)
+    if not user_data:
+        await message.answer("Siz ro'yxatdan o'tmagansiz. Iltimos /start ni bosing.")
+        return
+    
+    login, password = user_data
     kutilish = await message.answer("🔄 HEMIS tizimiga ulanmoqda...")
-    profil_malumoti = await get_hemis_profile()
+    
+    # Bazadagi login parolni yuboramiz
+    profil_malumoti = await get_hemis_profile(login, password)
+    
     await kutilish.delete()
     await message.answer(profil_malumoti, parse_mode="Markdown")
 
-@dp.message(F.text == "📅 Dars jadvali")
-async def dars_jadvali_handler(message: Message):
-    jadval = await get_hemis_schedule()
-    await message.answer(jadval)
+@dp.message(F.text.in_(["📅 Dars jadvali", "📊 Baholar va Davomat", "🌐 Tilni o'zgartirish", "🚀 Talaba Portalini ochish"]))
+async def boshqa_tugmalar(message: Message):
+    await message.answer("Bu bo'lim tez kunda ishga tushadi! 🛠")
 
-@dp.message(F.text == "📊 Baholar va Davomat")
-async def baholar_handler(message: Message):
-    baholar = await get_hemis_grades()
-    await message.answer(baholar)
-
-@dp.message(F.text == "🌐 Tilni o'zgartirish")
-async def til_handler(message: Message):
-    await message.answer("Tez kunda ko'p tilli funksiya qo'shiladi! 🌍")
-
-@dp.message(F.text == "🚀 Talaba Portalini ochish")
-async def portal_handler(message: Message):
-    await message.answer("Talaba portaliga ulanish uchun bosing: [HEMIS Portal](https://student.iiau.uz/)", parse_mode="Markdown", disable_web_page_preview=True)
-
-# --- 4. CLAUDE PPT BUYRUG'I (/ppt) ---
+# --- PPT VA GEMINI (AI) ---
 @dp.message(Command("ppt"))
 async def ppt_handler(message: Message):
-    promo_text = (
-        "🚀 **Taqdimot tayyorlash (PPT) xizmati haqida:**\n\n"
-        "Ushbu funksiya dunyodagi eng kuchli **Claude 3.5 Sonnet** sun'iy intellekti asosida ishlaydi. "
-        "Sizga mukammal slaydlar va taqdimot matnlarini yozib beradigan, vaqtingizni 100 barobar tejaydigan bu maxsus rejim "
-        "**eng yaqin fursatlarda pullik obuna (podpiska) doirasida ishga tushiriladi!**\n\n"
-        "Barcha talabalar uchun maxsus arzon tariflar tayyorlanmoqda. Bizni kuzatib boring! 💎"
-    )
-    await message.answer(promo_text, parse_mode="Markdown")
+    await message.answer("🚀 **Taqdimot tayyorlash (PPT)** tez kunda pullik obunada ishga tushadi!", parse_mode="Markdown")
 
-# --- 5. QOLGAN BARCHA MATNLAR UCHUN (GEMINI) ---
 @dp.message()
-async def general_text_handler(message: Message):
+async def general_text_handler(message: Message, state: FSMContext):
+    # Agar foydalanuvchi registratsiyadan o'tayotgan bo'lsa, AI ga bormasligi kerak
+    current_state = await state.get_state()
+    if current_state is not None:
+        return
+
     kutilish_xabari = await message.answer("💬 Tahlil qilinmoqda...")
     try:
         gemini_javobi = await ask_gemini(message.text)
@@ -86,7 +107,7 @@ async def general_text_handler(message: Message):
         await message.answer(gemini_javobi, parse_mode="Markdown")
     except Exception as e:
         await kutilish_xabari.delete()
-        await message.answer(f"Kechirasiz, xatolik yuz berdi: {str(e)}")
+        await message.answer(f"Xatolik: {str(e)}")
 
 async def main():
     await dp.start_polling(bot)
