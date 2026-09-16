@@ -49,7 +49,6 @@ async def get_hemis_schedule(login, password):
     if not token:
         return "❌ HEMIS bilan xatolik! Login yoki parol noto'g'ri."
     
-    # HEMIS API orqali dars jadvalini olish endpointi
     url = f"{HEMIS_BASE_URL}/education/schedule"
     headers = {"Authorization": f"Bearer {token}"}
     
@@ -89,3 +88,37 @@ async def get_hemis_schedule(login, password):
                 return "❌ Dars jadvalini yuklab bo'lmadi. HEMIS vaqtincha ishlamayotgan bo'lishi mumkin."
     except Exception as e:
         return f"❌ Jadvalni olishda xatolik: {str(e)}"
+
+# --- YAGI QO'SHILGAN: Baholar va Davomat ---
+async def get_hemis_grades_and_attendance(login, password):
+    token = await get_hemis_token(login, password)
+    if not token:
+        return "❌ HEMIS bilan xatolik! Login yoki parol noto'g'ri."
+    
+    # HEMIS o'zlashtirish (performance) endpointi
+    url = f"{HEMIS_BASE_URL}/education/performance"
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers, timeout=10) as response:
+                if response.status == 200:
+                    res = await response.json()
+                    data = res.get('data', [])
+                    
+                    if not data:
+                        return "📊 Hozircha baholar va o'zlashtirish ma'lumotlari topilmadi."
+                    
+                    text = "📊 **Sizning O'zlashtirish va Baholaringiz:**\n\n"
+                    for item in data:
+                        fan = item.get('subject', {}).get('name', 'Fan nomi')
+                        umumiy = item.get('total_grade', 'N/A')
+                        reyting = item.get('grade_name', 'Baholanmagan')
+                        
+                        text += f"📚 **{fan}**\n   🔹 Umumiy ball: {umumiy} | Baho: {reyting}\n\n"
+                    
+                    return text
+                else:
+                    return "⚠️ Baholar bo'limi hozircha ushbu HEMIS serverida ochiq emas yoki ma'lumot topilmadi."
+    except Exception as e:
+        return f"❌ Baholarni olishda xatolik: {str(e)}"
