@@ -18,7 +18,6 @@ if os.path.exists("static"):
 
 @app.on_event("startup")
 async def on_startup():
-    # Yangi SQLite bazamiz uchun await kerak emas
     init_db()
 
 @app.get("/")
@@ -39,7 +38,9 @@ async def api_schedule(user_id: Optional[int] = Query(None)):
     if not user:
         return JSONResponse({"error": "Foydalanuvchi topilmadi. Botdan ro'yxatdan o'ting."}, status_code=404)
 
-    data = await get_hemis_schedule()
+    login, password = user
+    # Login va parol to'g'ri yuborilyapti
+    data = await get_hemis_schedule(login, password)
     return JSONResponse({"schedule": data})
 
 # API: Profil ma'lumotlari
@@ -52,7 +53,6 @@ async def api_profile(user_id: Optional[int] = Query(None)):
     if not user:
         return JSONResponse({"error": "Foydalanuvchi topilmadi. Botdan ro'yxatdan o'ting."}, status_code=404)
 
-    # Bazadan login va parolni olib HEMIS ga yuboramiz
     login, password = user
     data = await get_hemis_profile(login, password)
     return JSONResponse({"profile": data})
@@ -66,13 +66,12 @@ class ChatRequest(BaseModel):
 async def api_chat(req: ChatRequest):
     full_prompt = req.prompt
     
-    # Agar foydalanuvchi botda bor bo'lsa, uning ma'lumotlarini AI ga beramiz
     if req.user_id:
         user = get_user(req.user_id)
         if user:
             login, password = user
             profile = await get_hemis_profile(login, password)
-            schedule = await get_hemis_schedule()
+            schedule = await get_hemis_schedule(login, password)
             
             full_prompt = f"Foydalanuvchi ma'lumotlari:\n{profile}\n\nJadval:\n{schedule}\n\nFoydalanuvchi savoli: {req.prompt}"
 
