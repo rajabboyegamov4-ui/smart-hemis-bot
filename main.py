@@ -5,10 +5,10 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-# Yangi tizimga mos importlar
+# Yangi tizimga mos importlar (til funksiyalari qo'shildi)
 from services.hemis_service import get_hemis_profile, get_hemis_schedule
 from services.gemini_service import ask_gemini
-from database import get_user, init_db
+from database import get_user, init_db, get_user_language, update_user_language
 
 app = FastAPI(title="Talaba Smart Portali")
 
@@ -28,6 +28,14 @@ async def read_root():
         return FileResponse(html_path)
     return FileResponse(os.path.join("templates", "index.html"))
 
+# API: Foydalanuvchi tilini olish
+@app.get("/api/language")
+async def api_get_language(user_id: Optional[int] = Query(None)):
+    if not user_id:
+        return JSONResponse({"language": "uz"})
+    lang = get_user_language(user_id)
+    return JSONResponse({"language": lang})
+
 # API: Dars jadvali
 @app.get("/api/schedule")
 async def api_schedule(user_id: Optional[int] = Query(None)):
@@ -39,7 +47,6 @@ async def api_schedule(user_id: Optional[int] = Query(None)):
         return JSONResponse({"error": "Foydalanuvchi topilmadi. Botdan ro'yxatdan o'ting."}, status_code=404)
 
     login, password = user
-    # Login va parol to'g'ri yuborilyapti
     data = await get_hemis_schedule(login, password)
     return JSONResponse({"schedule": data})
 
