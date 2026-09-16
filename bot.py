@@ -4,16 +4,17 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
 
-# Config fayldan tokenni chaqiramiz
+# Config va Servislarni chaqiramiz
 from config import BOT_TOKEN 
 from services.gemini_service import ask_gemini
+from services.hemis_service import get_hemis_profile, get_hemis_schedule, get_hemis_grades
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-# --- 1. TUGMALAR (Klaviatura) YARATISH ---
+# --- 1. TUGMALAR YARATISH ---
 main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="🚀 Talaba Portalini ochish")],
@@ -22,7 +23,6 @@ main_menu = ReplyKeyboardMarkup(
     ],
     resize_keyboard=True
 )
-
 
 # --- 2. START BUYRUG'I ---
 @dp.message(CommandStart())
@@ -36,34 +36,33 @@ async def start_handler(message: Message):
         "📊 **Taqdimotlar (/ppt):** Slaydlar uchun mukammal struktura va matnlar tayyorlash xizmati.\n\n"
         "Shunchaki o'zingizni qiziqtirgan savolni yozing va biz ishni boshlaymiz! 🚀"
     )
-    # Start bosilganda matn va tugmalar birga chiqadi
     await message.answer(welcome_text, parse_mode="Markdown", reply_markup=main_menu)
 
-
 # --- 3. HEMIS TUGMALARI UCHUN HANDLERLAR ---
-# Bu qism bot tugmalarni "AI" emas, aynan tugma deb tushunishi uchun kerak
-
 @dp.message(F.text == "👤 Profil")
 async def profil_handler(message: Message):
-    # Bu yerga o'zingizning HEMIS profilni tortib keluvchi kodingizni qo'shasiz (hozircha vaqtinchalik javob)
-    await message.answer("Sizning profilingiz ma'lumotlari yuklanmoqda... (HEMIS API ga ulanadi)")
+    kutilish = await message.answer("🔄 HEMIS tizimiga ulanmoqda...")
+    profil_malumoti = await get_hemis_profile()
+    await kutilish.delete()
+    await message.answer(profil_malumoti, parse_mode="Markdown")
 
 @dp.message(F.text == "📅 Dars jadvali")
 async def dars_jadvali_handler(message: Message):
-    await message.answer("Sizning dars jadvalingiz yuklanmoqda... (HEMIS API ga ulanadi)")
+    jadval = await get_hemis_schedule()
+    await message.answer(jadval)
 
 @dp.message(F.text == "📊 Baholar va Davomat")
 async def baholar_handler(message: Message):
-    await message.answer("Baholar va davomat ma'lumotlari yuklanmoqda... (HEMIS API ga ulanadi)")
+    baholar = await get_hemis_grades()
+    await message.answer(baholar)
 
 @dp.message(F.text == "🌐 Tilni o'zgartirish")
 async def til_handler(message: Message):
-    await message.answer("Tilni o'zgartirish menyusi:")
+    await message.answer("Tez kunda ko'p tilli funksiya qo'shiladi! 🌍")
 
 @dp.message(F.text == "🚀 Talaba Portalini ochish")
 async def portal_handler(message: Message):
-    await message.answer("Talaba portaliga ulanish:")
-
+    await message.answer("Talaba portaliga ulanish uchun bosing: [HEMIS Portal](https://student.iiau.uz/)", parse_mode="Markdown", disable_web_page_preview=True)
 
 # --- 4. CLAUDE PPT BUYRUG'I (/ppt) ---
 @dp.message(Command("ppt"))
@@ -77,22 +76,17 @@ async def ppt_handler(message: Message):
     )
     await message.answer(promo_text, parse_mode="Markdown")
 
-
 # --- 5. QOLGAN BARCHA MATNLAR UCHUN (GEMINI) ---
-# DIQQAT: AI har doim kodning eng oxirida turishi shart! Agar uni tepaga qoysangiz tugmalarni ham tahlil qilib yuboradi.
 @dp.message()
 async def general_text_handler(message: Message):
     kutilish_xabari = await message.answer("💬 Tahlil qilinmoqda...")
-    
     try:
-        # Kundalik savollarni Gemini'ga yuboramiz
         gemini_javobi = await ask_gemini(message.text)
         await kutilish_xabari.delete()
         await message.answer(gemini_javobi, parse_mode="Markdown")
     except Exception as e:
         await kutilish_xabari.delete()
         await message.answer(f"Kechirasiz, xatolik yuz berdi: {str(e)}")
-
 
 async def main():
     await dp.start_polling(bot)
