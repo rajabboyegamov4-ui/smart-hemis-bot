@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Mavzular (Themes) uchun rang palitralari */
         :root {
             --hemis-dark: #0f172a;
             --bg-color: #f3f4f6;
@@ -63,17 +62,16 @@
         .logo-area { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
         .logo-icon { color: #60a5fa; font-size: 22px; }
 
-        /* Kichik chiroyli boshqaruv tugmalari (Til va Oboy) */
         .controls-right { display: flex; align-items: center; gap: 8px; }
         .control-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; transition: transform 0.2s; }
         .control-btn:active { transform: scale(0.9); }
 
-        .profile-card { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); position: relative; overflow: hidden; }
+        .profile-card { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); }
         .avatar { width: 45px; height: 45px; border-radius: 50%; background-color: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 22px; }
         .profile-info h2 { font-size: 15px; margin-bottom: 3px; font-weight: 600; }
         .profile-info p { font-size: 11px; color: #e2e8f0; }
 
-        /* Modal oyna (Til va Mavzu tanlash uchun) */
+        /* Modal oynalar */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: white; padding: 20px; border-radius: 16px; width: 100%; max-width: 320px; color: #1f2937; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: popUp 0.3s ease; }
         @keyframes popUp { 0% { transform: scale(0.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
@@ -94,19 +92,18 @@
         .icon-grades { background: #dcfce7; color: #16a34a; }
         .icon-subjects { background: #f3e8ff; color: #9333ea; }
         
-        /* AI Card Special */
         .ai-card { background: var(--accent-gradient); border: none; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
         .ai-card h3 { color: white; }
         .ai-icon-wrapper { background: rgba(255,255,255,0.2); color: white; }
         
-        /* Bottom Stats */
+        /* Stats */
         .stats-section { padding: 0 16px; }
         .stats-card { background: var(--card-bg); border-radius: 16px; padding: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05); }
         .stat-box p:first-child { font-size: 11px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
         .stat-box p:last-child { font-size: 22px; font-weight: 800; color: var(--text-main); }
         .stat-right { text-align: right; }
 
-        /* Footer / Mualliflik */
+        /* Footer */
         footer { text-align: center; padding: 16px; font-size: 12px; color: var(--text-muted); font-weight: 500; }
         footer span { background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 700; }
     </style>
@@ -119,7 +116,6 @@
                 <i class="fa-solid fa-graduation-cap logo-icon"></i>
                 <span id="txt-logo">HEMIS Portal</span>
             </div>
-            <!-- Kichik zamonaviy ikonka tugmalar (Til va Mavzu) -->
             <div class="controls-right">
                 <div class="control-btn" onclick="openModal('langModal')" title="Tilni o'zgartirish"><i class="fa-solid fa-globe"></i></div>
                 <div class="control-btn" onclick="openModal('themeModal')" title="Mavzu va Robotni tanlash"><i class="fa-solid fa-palette"></i></div>
@@ -166,7 +162,6 @@
         </div>
     </section>
 
-    <!-- Footer: Mualliflik imzosi -->
     <footer>
         Created with ❤️ by <span>Rajabboy Egamov</span>
     </footer>
@@ -174,7 +169,7 @@
     <!-- TIL TANLASH MODALI -->
     <div id="langModal" class="modal">
         <div class="modal-content">
-            <h3 id="txt-choose-lang">Tilni tanlang / Выберите язык</h3>
+            <h3 id="txt-choose-lang">Tilni tanlang</h3>
             <div class="modal-grid">
                 <button class="modal-btn" onclick="changeLanguage('uz')">🇺🇿 O'zbekcha</button>
                 <button class="modal-btn" onclick="changeLanguage('ru')">🇷🇺 Русский</button>
@@ -199,11 +194,21 @@
         </div>
     </div>
 
+    <!-- MA'LUMOTLARNI KO'RSATISH MODALI -->
+    <div id="infoModal" class="modal">
+        <div class="modal-content" style="max-width: 90%; max-height: 80vh; overflow-y: auto; text-align: left;">
+            <h3 id="modalTitle" style="text-align: center; margin-bottom: 10px;">Ma'lumot</h3>
+            <div id="modalBody" style="font-size: 13px; white-space: pre-wrap; line-height: 1.5; margin-bottom: 15px;">Yuklanmoqda...</div>
+            <button class="close-modal" onclick="closeModal('infoModal')">Yopish</button>
+        </div>
+    </div>
+
     <script>
         let tg = window.Telegram.WebApp;
         tg.expand(); 
 
-        // Tarjimalar bazasi (4 til)
+        const userId = tg.initDataUnsafe?.user?.id || 306241100302;
+
         const translations = {
             uz: { schedule: "Dars jadvali", grades: "O'zlashtirish", subjects: "Fanlar", ai: "AI Yordamchi", gpa: "Umumiy GPA", course: "Kurs", chooseLang: "Tilni tanlang", chooseTheme: "Mavzu va Robotni tanlang" },
             ru: { schedule: "Расписание", grades: "Успеваемость", subjects: "Предметы", ai: "ИИ Помощник", gpa: "Общий GPA", course: "Курс", chooseLang: "Выберите язык", chooseTheme: "Выберите тему и робота" },
@@ -231,7 +236,6 @@
             localStorage.setItem('portal_theme', themeName);
             localStorage.setItem('portal_robot', emoji);
             
-            // Telegram header rangini ham mavzuga moslash
             if(themeName === 'male') tg.setHeaderColor('#1e3a8a');
             else if(themeName === 'female') tg.setHeaderColor('#831843');
             else if(themeName === 'muslim_male') tg.setHeaderColor('#064e3b');
@@ -248,12 +252,35 @@
             document.getElementById(modalId).style.display = 'none';
         }
 
-        function alertAction(type) {
-            // Kerakli bo'limlarga o'tish logikasini shu yerga yozishingiz mumkin
-            console.log(type + " bosildi");
+        async function alertAction(type) {
+            const modal = document.getElementById('infoModal');
+            const title = document.getElementById('modalTitle');
+            const body = document.getElementById('modalBody');
+            
+            openModal('infoModal');
+            body.innerText = "🔄 Ma'lumot yuklanmoqda...";
+
+            if (type === 'schedule') {
+                title.innerText = "📅 Dars jadvali";
+                try {
+                    let res = await fetch(`/api/schedule?user_id=${userId}`);
+                    let data = await res.json();
+                    body.innerText = data.schedule || data.error || "Ma'lumot topilmadi.";
+                } catch (err) {
+                    body.innerText = "❌ Xatolik yuz berdi: " + err.message;
+                }
+            } else if (type === 'grades') {
+                title.innerText = "📊 O'zlashtirish";
+                body.innerText = "⚠️ Bu bo'lim tez kunda HEMIS orqali to'liq ishga tushadi!";
+            } else if (type === 'subjects') {
+                title.innerText = "📚 Fanlar";
+                body.innerText = "⚠️ Fanlar ro'yxati tez kunda qo'shiladi!";
+            } else if (type === 'ai') {
+                title.innerText = "🤖 AI Yordamchi";
+                body.innerText = "Salom! Men sizning yordamchingizman. Savolingizni Telegram chatga yozishingiz mumkin.";
+            }
         }
 
-        // Saqlangan sozlamalarni yuklash
         window.onload = function() {
             let savedLang = localStorage.getItem('portal_lang') || 'uz';
             let savedTheme = localStorage.getItem('portal_theme') || 'male';
