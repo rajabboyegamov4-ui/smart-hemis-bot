@@ -54,12 +54,23 @@ async def start_handler(message: Message, state: FSMContext):
 @dp.message(RegisterState.waiting_for_login)
 async def process_login(message: Message, state: FSMContext):
     login_text = message.text.strip()
+    
+    # Foydalanuvchi yuborgan login xabarini chatdan o'chiramiz
+    try:
+        await message.delete()
+    except Exception:
+        pass
+
     if not login_text.isdigit():
-        await message.answer("⚠️ Login faqat raqamlardan iborat bo'lishi kerak (Talaba ID raqami). Qaytadan kiriting:")
+        msg = await message.answer("⚠️ Login faqat raqamlardan iborat bo'lishi kerak (Talaba ID raqami). Qaytadan kiriting:")
+        await state.update_data(prompt_msg_id=msg.message_id)
         return
         
     await state.update_data(login=login_text)
-    await message.answer("Yaxshi! Endi HEMIS parolingizni yuboring:")
+    
+    # Parol so'ralgan xabarni yuboramiz va ID sini saqlaymiz
+    msg = await message.answer("Yaxshi! Endi HEMIS parolingizni yuboring:")
+    await state.update_data(prompt_msg_id=msg.message_id)
     await state.set_state(RegisterState.waiting_for_password)
 
 @dp.message(RegisterState.waiting_for_password)
@@ -67,8 +78,22 @@ async def process_password(message: Message, state: FSMContext):
     password = message.text.strip()
     data = await state.get_data()
     login = data['login']
+    prompt_msg_id = data.get('prompt_msg_id')
     
-    # Bazaga saqlaymiz
+    # 1. Foydalanuvchi yuborgan parolni darhol o'chiramiz
+    try:
+        await message.delete()
+    except Exception:
+        pass
+        
+    # 2. Botning so'rov xabarini ham o'chiramiz
+    if prompt_msg_id:
+        try:
+            await bot.delete_message(chat_id=message.chat.id, message_id=prompt_msg_id)
+        except Exception:
+            pass
+    
+    # Bazaga xavfsiz saqlaymiz
     save_user(message.from_user.id, login, password)
     await state.clear()
     
